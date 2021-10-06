@@ -1,0 +1,832 @@
+\documentclass{beamer}
+
+\usepackage{agda}
+\usepackage{apacite}
+\usepackage{catchfilebetweentags}
+\usepackage{changepage}
+\usepackage{babel}
+\usepackage{bookmark}
+
+\usepackage{graphicx}
+
+\usepackage[autostyle=true,french=guillemets,maxlevel=3]{csquotes}
+
+\graphicspath{ {images/} }
+
+\newcommand{\agda}[2]{\ExecuteMetaData[latex/#1.tex]{#2}}
+
+\usetheme{Frankfurt}
+
+\DeclareQuoteStyle{english}
+  {\em}
+    {\em}
+    {\textquotedblleft\em}
+    {\em\textquotedblright}
+
+% Information to be included in the title page:
+\title{A Simplified version of Bitcoin, \\
+    implemented in Agda}
+\author[Guilherme]{Guilherme Horta Alvares da Silva}
+% \institute{Fundação Getulio Vargas}
+\date{2021}
+
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}
+  \frametitle{Uma versão simplificada do Bitcoin, implementada em Agda}
+\begin{itemize}
+  \item Objetivo
+  \item Justificativa
+  \item Linguagem funcional e Agda
+  \begin{itemize}
+    \item Linguagem Funcional
+    \item Lambda Calculus
+    \item Agda
+  \end{itemize}
+  \item Criptomoedas
+  \begin{itemize}
+    \item Definição
+    \item Funções criptográficas
+    \item Transações e árvore de transações
+    \item Blocos e cadeia de blocos
+    \item Bugs
+  \end{itemize}
+  \item Próximos passos
+  \item Referências Bibliográficas
+\end{itemize}
+\end{frame}
+
+\section{Objetivo}
+
+\begin{code}
+module main where
+
+
+-- open import Prelude
+-- open import Utils
+open import Data.Nat
+open import Data.List
+open import Data.Unit hiding (_≤_; _≟_)
+open import Data.Empty
+open import Data.Sum hiding (map)
+open import Data.Fin hiding (_+_; _≥_; _≤_; _-_; _≟_)
+open import Data.Product hiding (map)
+open import Function
+open import Relation.Binary.PropositionalEquality
+open import Relation.Nullary
+
+variable
+  MsgPrimitive : Set
+
+Nat = ℕ
+-- data Time : Set where
+--   nat : ℕ → Time
+
+-- sucTime : Time → Time
+-- sucTime (nat time) = nat (suc time)
+
+-- timeToNat : Time → ℕ
+-- timeToNat (nat x) = x
+
+-- timeToNatSuc : {time : Time} → timeToNat (sucTime time) ≡ suc (timeToNat time)
+-- timeToNatSuc {nat x} = refl
+
+-- ID = ℕ
+
+-- data PublicKey : Set where
+--   nat : ℕ → PublicKey
+
+-- data Address : Set where
+--   nat : ℕ → Address
+
+-- data PrivateKey : Set where
+--   nat : ℕ → PrivateKey
+
+-- data Signature : Set where
+--   nat : ℕ → Signature
+
+-- data Hashed : Set where
+--   nat : ℕ → Hashed
+
+-- data Msg : Set where
+--   nat : (n : ℕ) → Msg
+--   _+msg_ : (m n : Msg) → Msg
+
+
+
+_-_p≥_ : (a b : Nat) (p : a ≥ b) → Nat
+zero - zero p≥ p = zero
+suc a - .zero p≥ z≤n = suc a
+suc a - (suc b) p≥ s≤s c = a - b p≥ c
+
+data Msg : Set₁ where
+  msgPrimitive : MsgPrimitive → Msg
+  _+msg_ : Msg → Msg → Msg
+
+infixr 5 _+msg_
+
+record HasMsg (A : Set) : Set₁ where
+  field
+    toMsgPrimitive : A → MsgPrimitive
+
+toMsg : {A : Set} ⦃ _ : HasMsg A ⦄ → A → Msg
+toMsg {A} ⦃ record { toMsgPrimitive = toMsgPrimitive } ⦄ x = msgPrimitive {A} (toMsgPrimitive x)
+
+open HasMsg
+
+module Crypto
+  ⦃ _ : HasMsg ℕ ⦄
+  (PublicKey : Set)
+  (PrivateKey : Set)
+  (Address : Set)
+  ⦃ _ : HasMsg Address ⦄
+  (Signature : Set)
+  (Hashed : Set)
+  where
+
+  Amount = ℕ
+  Time = ℕ
+  sucTime : ℕ → ℕ
+  sucTime = suc
+  -- _+msg_ = _+msg'_
+  -- infixr 5 _+msg_
+
+  record CryptoPostulates : Set₁ where
+    field
+      _priv≡pub_ : PrivateKey → PublicKey → Set
+      publicKey2Address : PublicKey → Address
+      Signed : Msg → PublicKey → Signature → Set
+      Signed? : (msg : Msg) (pk : PublicKey)
+        (sig : Signature) → Dec $ Signed msg pk sig
+      hashMsg : Msg → Hashed
+      hash-inj : ∀ m n → hashMsg m ≡ hashMsg n
+                  → m ≡ n
+
+  module CryptoWithPostulates
+    (crypto-postulates : CryptoPostulates)
+    where
+
+    open CryptoPostulates crypto-postulates
+
+-- infixr 5 _+msg_
+
+-- postulate _priv≡pub_ : PrivateKey → PublicKey → Set
+-- postulate publicKey2Address : PublicKey → Address
+-- postulate Signed : Msg → PublicKey → Signature → Set
+-- postulate Signed? : (msg : Msg) (pk : PublicKey)
+--             (sig : Signature) → Dec $ Signed msg pk sig
+-- postulate hashMsg : Msg → Hashed
+-- postulate hash-inj : ∀ m n → hashMsg m ≡ hashMsg n
+--             → m ≡ n
+
+    record SignedWithSigPbk (msg : Msg)(address : Address)
+      : Set where
+      field
+        publicKey   :  PublicKey
+        pbkCorrect  :  publicKey2Address publicKey ≡ address
+        signature   :  Signature
+        signed      :  Signed msg publicKey signature
+
+    record TXField : Set where
+      constructor txfield
+      field
+        amount  : Amount
+        address : Address
+
+    record TXFieldWithId : Set where
+      constructor txfieldid
+      field
+        time     : Time
+        position : ℕ
+        amount   : Amount
+        address  : Address
+
+    removeId : TXFieldWithId → TXField
+    removeId record { time = time ; position = position ; amount = amount ; address = address }
+      = record { amount = amount ; address = address }
+
+    data All {A : Set} : (P : A → Set) → List A → Set where
+      [] : {P : A → Set} → All P []
+      _∷_ : {x : A} {xs : List A} {P : A → Set} → P x → All P xs → All P (x ∷ xs)
+
+
+    data VectorOutput : (time : Time) (size : ℕ) (amount : Amount) → Set where
+      fstEl : ∀ {time : Time}
+        (tx : TXFieldWithId)
+        (sameId : TXFieldWithId.time tx ≡ time)
+        (elStart : TXFieldWithId.position tx ≡ zero)
+        → VectorOutput time 1 (TXFieldWithId.amount tx)
+
+      cons : ∀ {time : Time} {size : ℕ} {amount : Amount}
+        (listOutput : VectorOutput time size amount)
+        (tx : TXFieldWithId)
+        (sameId : TXFieldWithId.time tx ≡ time)
+        (elStart : TXFieldWithId.position tx ≡ size)
+        → VectorOutput time (suc size) (amount + TXFieldWithId.amount tx)
+
+    VectorOutput→List : ∀ {time : Time} {size : ℕ} {amount : Amount}
+      (outs : VectorOutput time size amount)
+      → List TXFieldWithId
+    VectorOutput→List (fstEl tx sameId elStart) = tx ∷ []
+    VectorOutput→List (cons outs tx sameId elStart) = tx ∷ VectorOutput→List outs
+
+    data SubList {A : Set} : List A → Set where
+      []   : SubList []
+      _¬∷_ : {xs : List A} → (x : A) → SubList xs → SubList (x ∷ xs)
+      _∷_  : {xs : List A} → (x : A) → SubList xs → SubList (x ∷ xs)
+
+    sub→list : {A : Set} {xs : List A} → SubList xs → List A
+    sub→list [] = []
+    sub→list (x ¬∷ xs) = sub→list xs
+    sub→list (x ∷ xs) = x ∷ sub→list xs
+
+    list-sub : {A : Set} {xs : List A} → SubList xs → List A
+    list-sub [] = []
+    list-sub (x ¬∷ xs) = x ∷ list-sub xs
+    list-sub (x ∷ xs) = list-sub xs
+
+    nonEmptySub : {A : Set} {xs : List A} → SubList xs → Set
+    nonEmptySub [] = ⊥
+    nonEmptySub (_ ¬∷ xs) = nonEmptySub xs
+    nonEmptySub (_ ∷ _) = ⊤
+
+    allList→allSub : {A : Set} {f : A → Set} {lista : List A} (sub : SubList lista)
+      (allLista : All f lista) → All f $ list-sub sub
+    allList→allSub [] allLista = allLista
+    allList→allSub (_ ¬∷ sub) (y ∷ allLista) = y ∷ allList→allSub sub allLista
+    allList→allSub (_ ∷ sub) (_ ∷ allLista) = allList→allSub sub allLista
+
+    NonNil : ∀ {A : Set} → List A → Set
+    NonNil [] = ⊥
+    NonNil (_ ∷ _) = ⊤
+
+    TX→Msg : (tx : TXField) → Msg
+    TX→Msg record { amount = amount ; address = address } = toMsg amount +msg toMsg address
+
+    TXId→Msg : (tx : TXFieldWithId) → Msg
+    TXId→Msg record { time = time ; position = position ; amount = amount ; address = address }
+      = toMsg time +msg toMsg position +msg toMsg amount +msg toMsg address
+
+    txInput→Msg : (input : TXFieldWithId) → (outputs : List TXField)
+      → NonNil outputs → Msg
+    txInput→Msg input [] ()
+    txInput→Msg input (output ∷ []) _ = TX→Msg output +msg TXId→Msg input
+    txInput→Msg input (output ∷ out2 ∷ outputs) _ = TX→Msg output +msg txInput→Msg input (out2 ∷ outputs) tt
+
+    txEls→Msg : ∀ {inputs : List TXFieldWithId}
+      → (input : TXFieldWithId) → (outputs : List TXFieldWithId)
+      → NonNil inputs × NonNil outputs → Msg
+    txEls→Msg input [] (_ , ())
+    txEls→Msg input (output ∷ outputs) _ = txInput→Msg input (map removeId (output ∷ outputs)) tt
+
+    txEls→MsgVecOut :
+      {time      : Time}
+      {outSize   : ℕ}
+      {outAmount : Amount}
+      (input     : TXFieldWithId)
+      (outputs   : VectorOutput time outSize outAmount)
+      → Msg
+    txEls→MsgVecOut input (fstEl tx sameId elStart) = TX→Msg (removeId tx) +msg TXId→Msg input
+    txEls→MsgVecOut input (cons outputs tx sameId elStart) =
+      TX→Msg (removeId tx) +msg txEls→MsgVecOut input outputs
+
+    txFieldList→TotalAmount : (txs : List TXFieldWithId) → Amount
+    txFieldList→TotalAmount [] = zero
+    txFieldList→TotalAmount (x ∷ txs) = txFieldList→TotalAmount txs + amount x
+      where open TXFieldWithId
+
+    record TXSigned
+      {time      : Time}
+      {outSize   : ℕ}
+      {outAmount : Amount}
+      (inputs    : List TXFieldWithId)
+      (outputs   : VectorOutput time outSize outAmount) : Set where
+      constructor txsig
+      field
+        nonEmpty : NonNil inputs
+        signed   : All
+          (λ input →
+          SignedWithSigPbk (txEls→MsgVecOut input outputs)
+                          (TXFieldWithId.address input))
+                          inputs
+        in≥out : txFieldList→TotalAmount inputs ≥ outAmount
+
+    record TXSignedRawOutput
+      (inputs : List TXFieldWithId)
+      (outputs : List TXFieldWithId) : Set where
+      field
+        nonEmpty : NonNil inputs × NonNil outputs
+        signed   : All
+          (λ input →
+          SignedWithSigPbk (txEls→Msg input outputs nonEmpty)
+                          (TXFieldWithId.address input))
+                          inputs
+        in≥out : txFieldList→TotalAmount inputs ≥ txFieldList→TotalAmount outputs
+
+    txSigInput : {inputs : List TXFieldWithId}
+      {outputs : List TXFieldWithId}
+      (tx : TXSignedRawOutput inputs outputs)
+      → List TXFieldWithId
+    txSigInput {inputs} _ = inputs
+
+    totalQtSub1 : ℕ
+    totalQtSub1 = 9
+
+    totalQt : ℕ
+    totalQt = suc totalQtSub1
+
+    tQtTxs : Set
+    tQtTxs = Fin $ totalQt
+
+    blockReward : ℕ → ℕ
+    blockReward _ = 100
+
+    mutual
+      data TXTree : (time : Time) (block : ℕ)
+        (outputs : List TXFieldWithId)
+        (totalFees : Amount)
+        (qtTransactions : tQtTxs) → Set where
+
+        genesisTree : TXTree zero zero [] zero zero
+        txtree      :
+          {block : ℕ} {time : Time}
+          {outSize : ℕ} {amount : Amount}
+          {inputs : List TXFieldWithId}
+          {outputTX : VectorOutput time outSize amount}
+          {totalFees : Amount} {qtTransactions : tQtTxs}
+          (tree : TXTree time block inputs totalFees qtTransactions)
+          (tx : TX {time} {block} {inputs} {outSize} tree outputTX)
+          (proofLessQtTX :
+              toℕ qtTransactions ≤ totalQtSub1
+              ⊎
+              (isCoinbase tx))
+          → TXTree (sucTime time)
+            (nextBlock tx)
+            (inputsTX tx ++ VectorOutput→List outputTX)
+            (incFees tx) (incQtTx tx proofLessQtTX)
+
+      data TX {time : Time} {block : ℕ} {inputs : List TXFieldWithId}
+          {outSize : ℕ} {outAmount : Amount}
+          {totalFees : ℕ} {qtTransactions : tQtTxs}
+        : (tr : TXTree time block inputs totalFees qtTransactions)
+          (outputs : VectorOutput time outSize outAmount) → Set where
+        normalTX :
+          (tr : TXTree time block inputs totalFees qtTransactions)
+          (SubInputs : SubList inputs)
+          (outputs : VectorOutput time outSize outAmount)
+          (txSigned : TXSigned (sub→list SubInputs) outputs)
+          → TX tr outputs
+        coinbase :
+          (tr : TXTree time block inputs totalFees qtTransactions)
+          (outputs : VectorOutput time outSize outAmount)
+          (pAmountFee : outAmount out≡Fee totalFees +RewardBlock block)
+          → TX tr outputs
+
+      isCoinbase : ∀ {block : ℕ} {time : Time}
+        {inputs : List TXFieldWithId}
+        {outSize : ℕ} {amount : Amount}
+        {totalFees : ℕ} {qtTransactions : tQtTxs}
+        {tr : TXTree time block inputs totalFees qtTransactions}
+        {outputs : VectorOutput time outSize amount}
+        (tx : TX {time} {block} {inputs} {outSize} tr outputs)
+        → Set
+      isCoinbase (normalTX _ _ _ _) = ⊥
+      isCoinbase (coinbase _ _ _)     = ⊤
+
+      nextBlock : ∀ {block : ℕ} {time : Time}
+        {inputs : List TXFieldWithId}
+        {outSize : ℕ} {amount : Amount}
+        {totalFees : ℕ} {qtTransactions : tQtTxs}
+        {tr : TXTree time block inputs totalFees qtTransactions}
+        {outputs : VectorOutput time outSize amount}
+        (tx : TX {time} {block} {inputs} {outSize} tr outputs)
+        → ℕ
+      nextBlock (normalTX genesisTree _ _ _) = zero
+      nextBlock {block} (normalTX (txtree _ (normalTX _ _ _ _) _) _ _ _) = block
+      nextBlock {block} (normalTX (txtree _ (coinbase _ _ _) _) _ _ _) = suc block
+      nextBlock (coinbase genesisTree _ _) = zero
+      nextBlock {block} (coinbase (txtree _ (normalTX _ _ _ _) _) _ _) = block
+      nextBlock {block} (coinbase (txtree _ (coinbase _ _ _) _) _ _) = suc block
+
+      inputsTX : ∀ {block : ℕ} {time : Time}
+        {inputs : List TXFieldWithId}
+        {outSize : ℕ} {amount : Amount}
+        {totalFees : ℕ} {qtTransactions : tQtTxs}
+        {tr : TXTree time block inputs totalFees qtTransactions}
+        {outputs : VectorOutput time outSize amount}
+        (tx : TX {time} {block} {inputs} {outSize} tr outputs)
+        → List TXFieldWithId
+      inputsTX (normalTX _ SubInputs _ _) = list-sub SubInputs
+      inputsTX {_} {_} {inputs} (coinbase _ _ _) = inputs
+
+      postulate
+        incQtTx : ∀ {qtTransactions : tQtTxs}
+          {block : Nat} {time : Time}
+          {inputs : List TXFieldWithId}
+          {outSize : Nat} {amount : Amount}
+          {totalFees : Nat}
+          {tr : TXTree time block inputs totalFees qtTransactions}
+          {outputs : VectorOutput time outSize amount}
+          (tx : TX {time} {block} {inputs} {outSize} tr outputs)
+          (proofLessQtTX :
+              toℕ qtTransactions ≤ totalQtSub1
+              ⊎
+              (isCoinbase tx))
+          → tQtTxs
+
+      incFees : ∀ {block : ℕ} {time : Time}
+        {inputs : List TXFieldWithId}
+        {outSize : ℕ} {amount : Amount}
+        {totalFees : Amount} {qtTransactions : tQtTxs}
+        {tr : TXTree time block inputs totalFees qtTransactions}
+        {outputs : VectorOutput time outSize amount}
+        (tx : TX {time} {block} {inputs} {outSize} tr outputs)
+        → Amount
+      incFees {_} {_} {_} {_} {amount} {totalFees}
+        (normalTX _ SubInputs _ (txsig _ _ in≥out)) =
+        txFieldList→TotalAmount (sub→list SubInputs)
+        - amount p≥ in≥out
+        + totalFees
+      incFees (coinbase tr outputs _) = zero
+
+      _out≡Fee_+RewardBlock_ : (amount : Amount)
+        (totalFees : Amount)
+        (block : Nat) → Set
+      amount out≡Fee totalFees +RewardBlock block =
+        amount ≡ totalFees + blockReward block
+
+
+    data nextTXTree :
+      {block₁ : Nat}
+      {time₁ : Time}
+      {outputs₁ : List TXFieldWithId}
+      {totalFees₁ : Amount}
+      {qtTransactions₁ : tQtTxs}
+      (txTree₁ : TXTree time₁ block₁ outputs₁ totalFees₁ qtTransactions₁)
+
+      {block₂ : Nat}
+      {time₂ : Time}
+      {outputs₂ : List TXFieldWithId}
+      {totalFees₂ : Amount}
+      {qtTransactions₂ : tQtTxs}
+      (txTree₂ : TXTree time₂ block₂ outputs₂ totalFees₂ qtTransactions₂)
+      → Set where
+
+      firstTX : ∀ {block time outputs totalFees qtTransactions}
+        (txTree : TXTree time block outputs totalFees qtTransactions)
+        → nextTXTree txTree txTree
+      nextTX : ∀ {block₁ time₁ outputs₁ totalFees₁ qtTransactions₁}
+        {txTree₁ : TXTree time₁ block₁ outputs₁ totalFees₁ qtTransactions₁}
+
+        {block₂ time₂ outputs₂ totalFees₂ qtTransactions₂}
+        {txTree₂ : TXTree time₂ block₂ outputs₂ totalFees₂ qtTransactions₂}
+
+        (nxTree : nextTXTree txTree₁ txTree₂)
+
+        {outSize amount}
+        {outputTX : VectorOutput time₂ outSize amount}
+        (tx : TX txTree₂ outputTX)
+        (proofLessQtTX :
+            -- (IsTrue (lessNat (finToNat qtTransactions₂) totalQtSub1))
+            toℕ qtTransactions₂ ≤ totalQtSub1
+            ⊎
+            (isCoinbase tx))
+        → nextTXTree txTree₁ (txtree txTree₂ tx proofLessQtTX)
+
+    firstTreesInBlock : ∀
+      {block time outputs totalFees qtTransactions}
+      (tree : TXTree time block outputs totalFees qtTransactions)
+      → Set
+    firstTreesInBlock genesisTree = ⊤
+    firstTreesInBlock (txtree genesisTree _ _) = ⊥
+    firstTreesInBlock (txtree (txtree _ (normalTX _ _ _ _) _) _ _) = ⊥
+    firstTreesInBlock (txtree (txtree _ (coinbase _ _ _) _) _ _) = ⊤
+
+    isFirstTreeInBlock : ∀
+      {block time outputs totalFees qtTransactions}
+      (tree : TXTree time block outputs totalFees qtTransactions)
+      → Dec (firstTreesInBlock tree)
+    isFirstTreeInBlock genesisTree = yes tt
+    isFirstTreeInBlock (txtree genesisTree (normalTX _ _ _ _) _) = no λ x → x
+    isFirstTreeInBlock (txtree genesisTree (coinbase _ _ _) _) = no λ x → x
+    isFirstTreeInBlock (txtree (txtree _ (normalTX _ _ _ _) _) _ _) = no λ x → x
+    isFirstTreeInBlock (txtree (txtree _ (coinbase _ _ _) _) _ _) = yes tt
+
+    coinbaseTree : ∀
+      {block time outputs totalFees qtTransactions}
+      (tree : TXTree time block outputs totalFees qtTransactions)
+      → Set
+    coinbaseTree genesisTree = ⊥
+    coinbaseTree (txtree _ (normalTX _ _ _ _) _) = ⊥
+    coinbaseTree (txtree _ (coinbase _ _ _) _) = ⊤
+
+    record Block
+      {block₁ : Nat}
+      {time₁ : Time}
+      {outputs₁ : List TXFieldWithId}
+      {totalFees₁ : Amount}
+      {qtTransactions₁ : tQtTxs}
+      (txTree₁ : TXTree time₁ block₁ outputs₁ totalFees₁ qtTransactions₁)
+
+      {time₂ : Time}
+      {outputs₂ : List TXFieldWithId}
+      {totalFees₂ : Amount}
+      {qtTransactions₂ : tQtTxs}
+      (txTree₂ : TXTree time₂ block₁ outputs₂ totalFees₂ qtTransactions₂)
+      : Set where
+      constructor blockc
+      field
+        nxTree           : nextTXTree txTree₁ txTree₂
+        fstBlock         : firstTreesInBlock txTree₁
+        sndBlockCoinbase : coinbaseTree txTree₂
+
+    fstTree→coinbase : ∀
+      {block time outputs totalFees qtTransactions}
+      {tree : TXTree time block outputs totalFees qtTransactions}
+      {outSize amount}
+      {outputTX : VectorOutput time outSize amount}
+      {tx : TX tree outputTX}
+      {proofLessQtTX :
+          -- (IsTrue (lessNat (finToNat qtTransactions) totalQtSub1))
+          toℕ qtTransactions ≤ totalQtSub1
+          ⊎
+          (isCoinbase tx)}
+      (fstTree : firstTreesInBlock (txtree tree tx proofLessQtTX))
+      → coinbaseTree tree
+    fstTree→coinbase {_} {_} {_} {_} {_} {genesisTree} ()
+    fstTree→coinbase {_} {_} {_} {_} {_} {txtree _ (normalTX _ _ _ _) _} ()
+    fstTree→coinbase {_} {_} {_} {_} {_} {txtree _ (coinbase _ _ _) _} _ = tt
+
+    data Blockchain :
+      {block₁ : Nat}
+      {time₁ : Time}
+      {outputs₁ : List TXFieldWithId}
+      {totalFees₁ : Amount}
+      {qtTransactions₁ : tQtTxs}
+      {txTree₁ : TXTree time₁ block₁ outputs₁ totalFees₁ qtTransactions₁}
+
+      {time₂ : Time}
+      {outputs₂ : List TXFieldWithId}
+      {totalFees₂ : Amount}
+      {qtTransactions₂ : tQtTxs}
+      {txTree₂ : TXTree time₂ block₁ outputs₂ totalFees₂ qtTransactions₂}
+      (block : Block txTree₁ txTree₂)
+      → Set where
+        fstBlock' :
+          {block₁ : Nat}
+          {time₁ : Time}
+          {outputs₁ : List TXFieldWithId}
+          {totalFees₁ : Amount}
+          {qtTransactions₁ : tQtTxs}
+          {txTree₁ : TXTree time₁ block₁ outputs₁ totalFees₁ qtTransactions₁}
+
+          {time₂ : Time}
+          {outputs₂ : List TXFieldWithId}
+          {totalFees₂ : Amount}
+          {qtTransactions₂ : tQtTxs}
+          {txTree₂ : TXTree time₂ block₁ outputs₂ totalFees₂ qtTransactions₂}
+          (block : Block txTree₁ txTree₂)
+          → Blockchain block
+
+        addBlock :
+          {block-p₁ : Nat}
+          {time-p₁ : Time}
+          {outputs-p₁ : List TXFieldWithId}
+          {totalFees-p₁ : Amount}
+          {qtTransactions-p₁ : tQtTxs}
+          {txTree-p₁ : TXTree time-p₁ block-p₁ outputs-p₁ totalFees-p₁ qtTransactions-p₁}
+
+          {time-p₂ : Time}
+          {outputs-p₂ : List TXFieldWithId}
+          {totalFees-p₂ : Amount}
+          {qtTransactions-p₂ : tQtTxs}
+          {txTree-p₂ : TXTree time-p₂ block-p₁ outputs-p₂ totalFees-p₂ qtTransactions-p₂}
+          {block-p : Block txTree-p₁ txTree-p₂}
+          (blockchain : Blockchain block-p)
+
+          {outSize : Nat}
+          {amount : Amount}
+          {outputTX : VectorOutput time-p₂ outSize amount}
+          {tx : TX {time-p₂} {block-p₁} {outputs-p₂} {outSize} txTree-p₂ outputTX}
+          {proofLessQtTX :
+              toℕ qtTransactions-p₂ ≤ totalQtSub1
+              ⊎
+              (isCoinbase tx)}
+
+          {time₂ : Time}
+          {outputs₂ : List TXFieldWithId}
+          {totalFees₂ : Amount}
+          {qtTransactions₂ : tQtTxs}
+          {txTree₂ : TXTree time₂ (nextBlock tx) outputs₂ totalFees₂ qtTransactions₂}
+          (block : Block (txtree txTree-p₂ tx proofLessQtTX) txTree₂)
+          → Blockchain block
+
+    record RawBlock
+      {block : Nat}
+      {time₂ : Time}
+      {outputs₂ : List TXFieldWithId}
+      {totalFees₂ : Amount}
+      {qtTransactions₂ : tQtTxs}
+      (tree₂ : TXTree time₂ block outputs₂ totalFees₂ qtTransactions₂)
+      : Set where
+      constructor rawBlockc
+      field
+        {time}           : Time
+        {outputs}        : List TXFieldWithId
+        {totalFees}      : Amount
+        {qtTransactions} : tQtTxs
+        {tree}           : TXTree time block outputs totalFees qtTransactions
+        rawBlock         : Block tree tree₂
+
+    isCoinbaseTree : ∀
+      {block time outputs totalFees qtTransactions}
+      (tree : TXTree time block outputs totalFees qtTransactions)
+      → Dec (coinbaseTree tree)
+    isCoinbaseTree genesisTree = no λ x → x
+    isCoinbaseTree (txtree _ (normalTX _ _ _ _) _) = no λ x → x
+    isCoinbaseTree (txtree _ (coinbase _ _ _) _) = yes tt
+
+    record fstTree
+      {block : Nat}
+      {time₂ : Time}
+      {outputs₂ : List TXFieldWithId}
+      {totalFees₂ : Amount}
+      {qtTransactions₂ : tQtTxs}
+      (txTree₂ : TXTree time₂ block outputs₂ totalFees₂ qtTransactions₂)
+      : Set where
+      constructor fstTreec
+      field
+        {time}               : Time
+        {outputs}            : List TXFieldWithId
+        {totalFees}          : Amount
+        {qtTransactions}     : tQtTxs
+        {tree}               : TXTree time block outputs totalFees qtTransactions
+        nxTree               : nextTXTree tree txTree₂
+        fstBlockc            : firstTreesInBlock tree
+
+    record fstTree₂
+      {block : Nat}
+      {time₂ : Time}
+      {outputs₂ : List TXFieldWithId}
+      {totalFees₂ : Amount}
+      {qtTransactions₂ : tQtTxs}
+      (txTree₂ : TXTree time₂ block outputs₂ totalFees₂ qtTransactions₂)
+      : Set where
+      pattern
+      constructor fstTreec₂
+      field
+        {block₂}              : Nat
+        {time}               : Time
+        {outputs}            : List TXFieldWithId
+        {totalFees}          : Amount
+        {qtTransactions}     : tQtTxs
+        {tree}               : TXTree time block₂ outputs totalFees qtTransactions
+        eq                   : block ≡ block₂
+        nxTree               : nextTXTree tree txTree₂
+        fstBlockc            : firstTreesInBlock tree
+
+    fstTree₂→fstTree : ∀
+      {block time₂ outputs₂ totalFees₂ qtTransactions₂}
+      {txTree₂ : TXTree time₂ block outputs₂ totalFees₂ qtTransactions₂}
+      (fTree₂ : fstTree₂ txTree₂)
+      → fstTree txTree₂
+    fstTree₂→fstTree (fstTreec₂ refl nxTree fstBlockc) = fstTreec nxTree fstBlockc
+
+    record fstTreeChange
+      (block : Nat)
+      (time : Time)
+      (outputs : List TXFieldWithId)
+      (totalFees : Amount)
+      (qtTransactions : tQtTxs)
+      : Set where
+      constructor fstTreeChangedc
+      field
+        {tree}      : TXTree time block outputs totalFees qtTransactions
+        ftree       : fstTree tree
+
+    changeBlockType : ∀
+      {block block₂ time outputs totalFees qtTransactions}
+      {tree : TXTree time block outputs totalFees qtTransactions}
+      {txTree : TXTree time block outputs totalFees qtTransactions}
+      (fstTree : fstTree tree)
+      (eq : block ≡ block₂)
+      → fstTreeChange block₂ time outputs totalFees qtTransactions
+    changeBlockType fstTree refl = fstTreeChangedc fstTree
+
+    record TXChange
+      {block : Nat}
+      {outSize : Nat}
+      {amount : Nat}
+      {time : Time}
+      {block : Nat}
+      {outputs : List TXFieldWithId}
+      {outputTX : VectorOutput time outSize amount}
+      {totalFees : Amount}
+      {qtTransactions : tQtTxs}
+      (tree : TXTree time block outputs totalFees qtTransactions)
+      (tx : TX tree outputTX)
+      (proofLess :
+        -- (IsTrue (lessNat (finToNat qtTransactions) totalQtSub1))
+        toℕ qtTransactions ≤ totalQtSub1
+        ⊎
+        (isCoinbase tx))
+      : Set where
+      constructor TXChangedc
+      field
+        fTree                 : fstTree (txtree tree tx proofLess)
+
+
+    changeTXType : ∀
+      {block time₁ time₂ totalFees₁ totalFees₂ outputs₁ outputs₂ qtTransactions₁ qtTransactions₂
+      outSize amount}
+      {outputTX : VectorOutput time₂ outSize amount}
+      {tree : TXTree time₁ block outputs₁ totalFees₁ qtTransactions₁}
+      {tree₂ : TXTree time₂ block outputs₂ totalFees₂ qtTransactions₂}
+      (nxTree : nextTXTree tree tree₂)
+      (fstBlockc : firstTreesInBlock tree)
+      (tx : TX tree₂ outputTX)
+      (proofLess :
+        toℕ qtTransactions₂ ≤ totalQtSub1
+        ⊎
+        (isCoinbase tx))
+      (eq : nextBlock tx ≡ block)
+      → TXChange {block} tree₂ tx proofLess
+    changeTXType nxTree fblock tx proof eq =
+      let nxTX = nextTX nxTree tx proof
+          ftree = fstTree₂→fstTree (fstTreec₂ eq nxTX fblock)
+      in TXChangedc ftree
+
+
+    fstTreeBlock : ∀
+      {block time outputs totalFees qtTransactions}
+      {tree : TXTree time block outputs totalFees qtTransactions}
+      (fstTree : fstTree tree)
+      → Nat
+    fstTreeBlock {block} _ = block
+
+    firstTree : ∀
+      {block time outputs totalFees qtTransactions}
+      (tree : TXTree time block outputs totalFees qtTransactions)
+      → fstTree tree
+    firstTree genesisTree = fstTreec (firstTX genesisTree) tt
+    firstTree {block₂} (txtree {block₁} tree tx proofLessQtTX)
+      with isFirstTreeInBlock (txtree tree tx proofLessQtTX)
+    ... | yes isFirst = fstTreec (firstTX (txtree tree tx proofLessQtTX)) isFirst
+    ... | no ¬first with block₂ ≟ block₁
+    ...   | yes eq = let ftree = firstTree tree
+                         nxTree = fstTree.nxTree ftree
+                         fstBlock = fstTree.fstBlockc ftree
+                         chgType = changeTXType nxTree fstBlock tx proofLessQtTX eq
+                    in TXChange.fTree chgType
+    ...   | no ¬eq = ⊥-elim impossible
+              where postulate impossible : ⊥
+
+    txTree→Block : ∀
+      {block time outputs totalFees qtTransactions}
+      (tree : TXTree time block outputs totalFees qtTransactions)
+      → Dec (RawBlock tree)
+    txTree→Block genesisTree =
+      no λ { (rawBlockc (blockc _ _ sndBlockCoinbase)) → sndBlockCoinbase }
+    txTree→Block (txtree tree tx proofLessQtTX)
+      with isCoinbaseTree (txtree tree tx proofLessQtTX)
+    ... | no ¬isCoinbase =
+            no λ{ (rawBlockc (blockc _ _ coinbaseTree)) → ¬isCoinbase coinbaseTree}
+    ... | yes isCoinbase = let fTree = firstTree (txtree tree tx proofLessQtTX)
+                               nxTree = fstTree.nxTree fTree
+                               fBlock = fstTree.fstBlockc fTree
+                          in yes (rawBlockc (blockc nxTree fBlock isCoinbase))
+
+    {-# TERMINATING #-}
+    block→blockchain : ∀
+      {block₁ time₁ outputs₁ totalFees₁ qtTransactions₁}
+      {txTree₁ : TXTree time₁ block₁ outputs₁ totalFees₁ qtTransactions₁}
+      {time₂ outputs₂ totalFees₂ qtTransactions₂}
+      {txTree₂ : TXTree time₂ block₁ outputs₂ totalFees₂ qtTransactions₂}
+      (block : Block txTree₁ txTree₂)
+      → Blockchain block
+    block→blockchain {_} {_} {_} {_} {_} {genesisTree}
+      (blockc nxTree fstBlock₁ sndBlockCoinbase) =
+      fstBlock' (blockc nxTree tt sndBlockCoinbase)
+    block→blockchain {_} {_} {_} {_} {_} {txtree tree tx proofLessQtTX}
+      (blockc nxTree fstBlock₁ sndBlockCoinbase)
+      with firstTree tree
+    ... | fstTreec nxTree₁ fstBlockc = addBlock
+      (block→blockchain (blockc nxTree₁ fstBlockc (fstTree→coinbase fstBlock₁)))
+      (blockc nxTree fstBlock₁ sndBlockCoinbase)
+\end{code}
+
+
+
+
+
+\section{Bibliografia}
+
+\begin{frame}{Referências Bibliográficas}
+  \bibliographystyle{apacite}
+  \bibliography{References}
+\end{frame}
+
+\end{document}
