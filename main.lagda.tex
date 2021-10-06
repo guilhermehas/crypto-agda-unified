@@ -78,9 +78,7 @@ open import Relation.Nullary
 variable
   MsgPrimitive : Set
 
-Nat = ℕ
-
-_-_p≥_ : (a b : Nat) (p : a ≥ b) → Nat
+_-_p≥_ : (a b : ℕ) (p : a ≥ b) → ℕ
 zero - zero p≥ p = zero
 suc a - .zero p≥ z≤n = suc a
 suc a - (suc b) p≥ s≤s c = a - b p≥ c
@@ -373,10 +371,10 @@ module Crypto
 
         postulate
           incQtTx : ∀ {qtTransactions : tQtTxs}
-            {block : Nat} {time : Time}
+            {block : ℕ} {time : Time}
             {inputs : List TXFieldWithId}
-            {outSize : Nat} {amount : Amount}
-            {totalFees : Nat}
+            {outSize : ℕ} {amount : Amount}
+            {totalFees : ℕ}
             {tr : TXTree time block inputs totalFees qtTransactions}
             {outputs : VectorOutput time outSize amount}
             (tx : TX {time} {block} {inputs} {outSize} tr outputs)
@@ -403,20 +401,20 @@ module Crypto
 
         _out≡Fee_+RewardBlock_ : (amount : Amount)
           (totalFees : Amount)
-          (block : Nat) → Set
+          (block : ℕ) → Set
         amount out≡Fee totalFees +RewardBlock block =
           amount ≡ totalFees + blockReward block
 
 
       data nextTXTree :
-        {block₁ : Nat}
+        {block₁ : ℕ}
         {time₁ : Time}
         {outputs₁ : List TXFieldWithId}
         {totalFees₁ : Amount}
         {qtTransactions₁ : tQtTxs}
         (txTree₁ : TXTree time₁ block₁ outputs₁ totalFees₁ qtTransactions₁)
 
-        {block₂ : Nat}
+        {block₂ : ℕ}
         {time₂ : Time}
         {outputs₂ : List TXFieldWithId}
         {totalFees₂ : Amount}
@@ -472,7 +470,7 @@ module Crypto
       coinbaseTree (txtree _ (coinbase _ _ _) _) = ⊤
 
       record Block
-        {block₁ : Nat}
+        {block₁ : ℕ}
         {time₁ : Time}
         {outputs₁ : List TXFieldWithId}
         {totalFees₁ : Amount}
@@ -508,7 +506,7 @@ module Crypto
       fstTree→coinbase {_} {_} {_} {_} {_} {txtree _ (coinbase _ _ _) _} _ = tt
 
       data Blockchain :
-        {block₁ : Nat}
+        {block₁ : ℕ}
         {time₁ : Time}
         {outputs₁ : List TXFieldWithId}
         {totalFees₁ : Amount}
@@ -523,7 +521,7 @@ module Crypto
         (block : Block txTree₁ txTree₂)
         → Set where
           fstBlock' :
-            {block₁ : Nat}
+            {block₁ : ℕ}
             {time₁ : Time}
             {outputs₁ : List TXFieldWithId}
             {totalFees₁ : Amount}
@@ -539,7 +537,7 @@ module Crypto
             → Blockchain block
 
           addBlock :
-            {block-p₁ : Nat}
+            {block-p₁ : ℕ}
             {time-p₁ : Time}
             {outputs-p₁ : List TXFieldWithId}
             {totalFees-p₁ : Amount}
@@ -554,7 +552,7 @@ module Crypto
             {block-p : Block txTree-p₁ txTree-p₂}
             (blockchain : Blockchain block-p)
 
-            {outSize : Nat}
+            {outSize : ℕ}
             {amount : Amount}
             {outputTX : VectorOutput time-p₂ outSize amount}
             {tx : TX {time-p₂} {block-p₁} {outputs-p₂} {outSize} txTree-p₂ outputTX}
@@ -572,7 +570,7 @@ module Crypto
             → Blockchain block
 
       record RawBlock
-        {block : Nat}
+        {block : ℕ}
         {time₂ : Time}
         {outputs₂ : List TXFieldWithId}
         {totalFees₂ : Amount}
@@ -597,7 +595,7 @@ module Crypto
       isCoinbaseTree (txtree _ (coinbase _ _ _) _) = yes tt
 
       record fstTree
-        {block : Nat}
+        {block : ℕ}
         {time₂ : Time}
         {outputs₂ : List TXFieldWithId}
         {totalFees₂ : Amount}
@@ -615,7 +613,7 @@ module Crypto
           fstBlockc            : firstTreesInBlock tree
 
       record fstTree₂
-        {block : Nat}
+        {block : ℕ}
         {time₂ : Time}
         {outputs₂ : List TXFieldWithId}
         {totalFees₂ : Amount}
@@ -625,7 +623,7 @@ module Crypto
         pattern
         constructor fstTreec₂
         field
-          {block₂}              : Nat
+          {block₂}              : ℕ
           {time}               : Time
           {outputs}            : List TXFieldWithId
           {totalFees}          : Amount
@@ -643,7 +641,7 @@ module Crypto
       fstTree₂→fstTree (fstTreec₂ refl nxTree fstBlockc) = fstTreec nxTree fstBlockc
 
       record fstTreeChange
-        (block : Nat)
+        (block : ℕ)
         (time : Time)
         (outputs : List TXFieldWithId)
         (totalFees : Amount)
@@ -664,11 +662,11 @@ module Crypto
       changeBlockType fstTree refl = fstTreeChangedc fstTree
 
       record TXChange
-        {block : Nat}
-        {outSize : Nat}
-        {amount : Nat}
+        {block : ℕ}
+        {outSize : ℕ}
+        {amount : ℕ}
         {time : Time}
-        {block : Nat}
+        {block : ℕ}
         {outputs : List TXFieldWithId}
         {outputTX : VectorOutput time outSize amount}
         {totalFees : Amount}
@@ -710,7 +708,7 @@ module Crypto
         {block time outputs totalFees qtTransactions}
         {tree : TXTree time block outputs totalFees qtTransactions}
         (fstTree : fstTree tree)
-        → Nat
+        → ℕ
       fstTreeBlock {block} _ = block
 
       firstTree : ∀
