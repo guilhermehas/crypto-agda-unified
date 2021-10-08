@@ -131,6 +131,7 @@
 \section{Objetivo}
 
 \begin{frame}
+  \frametitle{Imports}
 \begin{code}
 
 module main where
@@ -151,6 +152,7 @@ open import Utils
 \end{frame}
 
 \begin{frame}
+  \frametitle{Messages}
 \begin{code}
 
 variable
@@ -175,6 +177,7 @@ open HasMsg
 \end{code}
 \end{frame}
 \begin{frame}
+  \frametitle{Crypto Constants}
 \begin{code}
 
 module Crypto
@@ -195,6 +198,7 @@ module Crypto
 \end{code}
 \end{frame}
 \begin{frame}
+  \frametitle{Crypto Postulates}
 \begin{code}
 
   record CryptoPostulates : Set₁ where
@@ -208,17 +212,17 @@ module Crypto
       hash-inj : ∀ m n → hashMsg m ≡ hashMsg n
                   → m ≡ n
 
-\end{code}
-\end{frame}
-\begin{frame}
-\begin{code}
-
   module CryptoWithPostulates
     (crypto-postulates : CryptoPostulates)
     where
 
     open CryptoPostulates crypto-postulates
 
+\end{code}
+\end{frame}
+\begin{frame}
+  \frametitle{Message Signed}
+\begin{code}
     record SignedWithSigPbk (msg : Msg)(address : Address)
       : Set where
       field
@@ -389,6 +393,7 @@ module Crypto
 \end{code}
 \end{frame}
 \begin{frame}
+  \frametitle{Blockchain constants}
 \begin{code}
 
     module WithConstants
@@ -405,6 +410,7 @@ module Crypto
 \end{code}
 \end{frame}
 \begin{frame}
+  \frametitle{Transaction tree}
 \begin{code}
 
       mutual
@@ -440,6 +446,7 @@ module Crypto
 \end{code}
 \end{frame}
 \begin{frame}
+  \frametitle{Transaction}
 \begin{code}
 
         data TX {time : Time} {block : ℕ}
@@ -683,6 +690,7 @@ module Crypto
 \end{code}
 \end{frame}
 \begin{frame}
+  \frametitle{Block}
 \begin{code}
 
       record Block
@@ -705,6 +713,7 @@ module Crypto
 \end{code}
 \end{frame}
 \begin{frame}
+  \frametitle{Block}
 \begin{code}
 
         constructor blockc
@@ -745,6 +754,7 @@ module Crypto
 \end{code}
 \end{frame}
 \begin{frame}
+  \frametitle{Blockchain}
 \begin{code}
 
       data Blockchain :
@@ -768,6 +778,7 @@ module Crypto
 \end{code}
 \end{frame}
 \begin{frame}
+  \frametitle{Blockchain}
 \begin{code}
 
           fstBlock' :
@@ -791,6 +802,7 @@ module Crypto
 \end{code}
 \end{frame}
 \begin{frame}
+  \frametitle{Blockchain}
 \begin{code}
 
           addBlock :
@@ -814,6 +826,7 @@ module Crypto
 \end{code}
 \end{frame}
 \begin{frame}
+  \frametitle{Blockchain}
 \begin{code}
 
             {outSize : ℕ}
