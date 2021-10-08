@@ -10,7 +10,7 @@ LAGDA = ${DOC}.lagda.tex
 SRC = ${DOC}.tex
 LATEX ?= pdflatex
 
-all: pdf
+default: pdf
 
 pdf: ${PDF}
 
@@ -24,7 +24,8 @@ install: pdf
 
 clean:
 	rm -rf latex
-	rm -f *.{log,aux,dvi,toc,ptb,snm,out,nav,fdb_latexmk,fls}
+	rm -f *.{log,aux,dvi,toc,ptb,snm,out,nav,fdb_latexmk,fls,sty,pdf}
+	rm -f main.tex
 
 distclean: clean
 	rm -f *.agdai

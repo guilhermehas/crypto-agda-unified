@@ -1,5 +1,14 @@
 \documentclass{beamer}
 
+\setlength{\leftmargini}{1em}
+\setbeamertemplate{itemize item}[circle]
+\setbeamertemplate{frametitle}
+{
+\raggedright\insertframetitle%
+}
+
+\usepackage{lipsum}
+
 \usepackage{agda}
 \usepackage{apacite}
 \usepackage{catchfilebetweentags}
@@ -121,7 +130,9 @@
 
 \section{Objetivo}
 
+\begin{frame}
 \begin{code}
+
 module main where
 
 open import Data.Nat
@@ -135,6 +146,12 @@ open import Function
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 open import Utils
+
+\end{code}
+\end{frame}
+
+\begin{frame}
+\begin{code}
 
 variable
   MsgPrimitive : Set
@@ -150,9 +167,15 @@ record HasMsg (A : Set) : Set₁ where
     toMsgPrimitive : A → MsgPrimitive
 
 toMsg : {A : Set} ⦃ _ : HasMsg A ⦄ → A → Msg
-toMsg {A} ⦃ record { toMsgPrimitive = toMsgPrimitive } ⦄ x = msgPrimitive {A} (toMsgPrimitive x)
+toMsg {A} ⦃ record { toMsgPrimitive = toMsgPrimitive } ⦄ x
+  = msgPrimitive {A} (toMsgPrimitive x)
 
 open HasMsg
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
 module Crypto
   ⦃ _ : HasMsg ℕ ⦄
@@ -169,6 +192,11 @@ module Crypto
   sucTime : ℕ → ℕ
   sucTime = suc
 
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
   record CryptoPostulates : Set₁ where
     field
       _priv≡pub_ : PrivateKey → PublicKey → Set
@@ -179,6 +207,11 @@ module Crypto
       hashMsg : Msg → Hashed
       hash-inj : ∀ m n → hashMsg m ≡ hashMsg n
                   → m ≡ n
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
   module CryptoWithPostulates
     (crypto-postulates : CryptoPostulates)
@@ -193,6 +226,11 @@ module Crypto
         pbkCorrect  :  publicKey2Address publicKey ≡ address
         signature   :  Signature
         signed      :  Signed msg publicKey signature
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
     record TXField : Set where
       constructor txfield
@@ -209,10 +247,17 @@ module Crypto
         address  : Address
 
     removeId : TXFieldWithId → TXField
-    removeId record { time = time ; position = position ; amount = amount ; address = address }
+    removeId record { time = time ; position = position
+      ; amount = amount ; address = address }
       = record { amount = amount ; address = address }
 
-    data VectorOutput : (time : Time) (size : ℕ) (amount : Amount) → Set where
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
+    data VectorOutput : (time : Time) (size : ℕ)
+      (amount : Amount) → Set where
       fstEl : ∀ {time : Time}
         (tx : TXFieldWithId)
         (sameId : TXFieldWithId.time tx ≡ time)
@@ -224,32 +269,57 @@ module Crypto
         (tx : TXFieldWithId)
         (sameId : TXFieldWithId.time tx ≡ time)
         (elStart : TXFieldWithId.position tx ≡ size)
-        → VectorOutput time (suc size) (amount + TXFieldWithId.amount tx)
+        → VectorOutput time (suc size)
+          (amount + TXFieldWithId.amount tx)
 
-    VectorOutput→List : ∀ {time : Time} {size : ℕ} {amount : Amount}
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
+    VectorOutput→List : ∀ {time : Time} {size : ℕ}
+      {amount : Amount}
       (outs : VectorOutput time size amount)
       → List TXFieldWithId
     VectorOutput→List (fstEl tx sameId elStart) = tx ∷ []
-    VectorOutput→List (cons outs tx sameId elStart) = tx ∷ VectorOutput→List outs
+    VectorOutput→List (cons outs tx sameId elStart) =
+      tx ∷ VectorOutput→List outs
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
     TX→Msg : (tx : TXField) → Msg
-    TX→Msg record { amount = amount ; address = address } = toMsg amount +msg toMsg address
+    TX→Msg record { amount = amount ; address = address }
+      = toMsg amount +msg toMsg address
 
     TXId→Msg : (tx : TXFieldWithId) → Msg
-    TXId→Msg record { time = time ; position = position ; amount = amount ; address = address }
-      = toMsg time +msg toMsg position +msg toMsg amount +msg toMsg address
+    TXId→Msg record { time = time ; position = position
+      ; amount = amount ; address = address }
+      = toMsg time +msg toMsg position +msg
+        toMsg amount +msg toMsg address
 
-    txInput→Msg : (input : TXFieldWithId) → (outputs : List TXField)
+    txInput→Msg : (input : TXFieldWithId) (outputs : List TXField)
       → NonNil outputs → Msg
     txInput→Msg input [] ()
-    txInput→Msg input (output ∷ []) _ = TX→Msg output +msg TXId→Msg input
-    txInput→Msg input (output ∷ out2 ∷ outputs) _ = TX→Msg output +msg txInput→Msg input (out2 ∷ outputs) tt
+    txInput→Msg input (output ∷ []) _
+      = TX→Msg output +msg TXId→Msg input
+    txInput→Msg input (output ∷ out2 ∷ outputs) _
+      = TX→Msg output +msg txInput→Msg input
+        (out2 ∷ outputs) tt
 
     txEls→Msg : ∀ {inputs : List TXFieldWithId}
-      → (input : TXFieldWithId) → (outputs : List TXFieldWithId)
+      (input : TXFieldWithId) (outputs : List TXFieldWithId)
       → NonNil inputs × NonNil outputs → Msg
     txEls→Msg input [] (_ , ())
-    txEls→Msg input (output ∷ outputs) _ = txInput→Msg input (map removeId (output ∷ outputs)) tt
+    txEls→Msg input (output ∷ outputs) _
+      = txInput→Msg input (map removeId (output ∷ outputs)) tt
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
     txEls→MsgVecOut :
       {time      : Time}
@@ -258,21 +328,30 @@ module Crypto
       (input     : TXFieldWithId)
       (outputs   : VectorOutput time outSize outAmount)
       → Msg
-    txEls→MsgVecOut input (fstEl tx sameId elStart) = TX→Msg (removeId tx) +msg TXId→Msg input
+    txEls→MsgVecOut input (fstEl tx sameId elStart)
+      = TX→Msg (removeId tx) +msg TXId→Msg input
     txEls→MsgVecOut input (cons outputs tx sameId elStart) =
-      TX→Msg (removeId tx) +msg txEls→MsgVecOut input outputs
+      TX→Msg (removeId tx) +msg
+      txEls→MsgVecOut input outputs
 
     txFieldList→TotalAmount : (txs : List TXFieldWithId) → Amount
     txFieldList→TotalAmount [] = zero
-    txFieldList→TotalAmount (x ∷ txs) = txFieldList→TotalAmount txs + amount x
+    txFieldList→TotalAmount (x ∷ txs)
+      = txFieldList→TotalAmount txs + amount x
       where open TXFieldWithId
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
     record TXSigned
       {time      : Time}
       {outSize   : ℕ}
       {outAmount : Amount}
       (inputs    : List TXFieldWithId)
-      (outputs   : VectorOutput time outSize outAmount) : Set where
+      (outputs   : VectorOutput time outSize outAmount)
+        : Set where
       constructor txsig
       field
         nonEmpty : NonNil inputs
@@ -282,6 +361,11 @@ module Crypto
                           (TXFieldWithId.address input))
                           inputs
         in≥out : txFieldList→TotalAmount inputs ≥ outAmount
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
     record TXSignedRawOutput
       (inputs : List TXFieldWithId)
@@ -293,13 +377,19 @@ module Crypto
           SignedWithSigPbk (txEls→Msg input outputs nonEmpty)
                           (TXFieldWithId.address input))
                           inputs
-        in≥out : txFieldList→TotalAmount inputs ≥ txFieldList→TotalAmount outputs
+        in≥out : txFieldList→TotalAmount inputs
+                 ≥ txFieldList→TotalAmount outputs
 
     txSigInput : {inputs : List TXFieldWithId}
       {outputs : List TXFieldWithId}
       (tx : TXSignedRawOutput inputs outputs)
       → List TXFieldWithId
     txSigInput {inputs} _ = inputs
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
     module WithConstants
       (totalQtSub1 : ℕ)
@@ -312,6 +402,11 @@ module Crypto
       tQtTxs : Set
       tQtTxs = Fin $ totalQt
 
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
       mutual
         data TXTree : (time : Time) (block : ℕ)
           (outputs : List TXFieldWithId)
@@ -319,6 +414,12 @@ module Crypto
           (qtTransactions : tQtTxs) → Set where
 
           genesisTree : TXTree zero zero [] zero zero
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
           txtree      :
             {block : ℕ} {time : Time}
             {outSize : ℕ} {amount : Amount}
@@ -336,21 +437,35 @@ module Crypto
               (inputsTX tx ++ VectorOutput→List outputTX)
               (incFees tx) (incQtTx tx proofLessQtTX)
 
-        data TX {time : Time} {block : ℕ} {inputs : List TXFieldWithId}
-            {outSize : ℕ} {outAmount : Amount}
-            {totalFees : ℕ} {qtTransactions : tQtTxs}
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
+        data TX {time : Time} {block : ℕ}
+            {inputs : List TXFieldWithId} {outSize : ℕ}
+            {outAmount : Amount} {totalFees : ℕ}
+            {qtTransactions : tQtTxs}
           : (tr : TXTree time block inputs totalFees qtTransactions)
-            (outputs : VectorOutput time outSize outAmount) → Set where
+            (outputs : VectorOutput time outSize outAmount)
+            → Set where
           normalTX :
             (tr : TXTree time block inputs totalFees qtTransactions)
             (SubInputs : SubList inputs)
             (outputs : VectorOutput time outSize outAmount)
             (txSigned : TXSigned (sub→list SubInputs) outputs)
             → TX tr outputs
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
           coinbase :
             (tr : TXTree time block inputs totalFees qtTransactions)
             (outputs : VectorOutput time outSize outAmount)
-            (pAmountFee : outAmount out≡Fee totalFees +RewardBlock block)
+            (pAmountFee : outAmount out≡Fee totalFees
+              +RewardBlock block)
             → TX tr outputs
 
         isCoinbase : ∀ {block : ℕ} {time : Time}
@@ -364,6 +479,11 @@ module Crypto
         isCoinbase (normalTX _ _ _ _) = ⊥
         isCoinbase (coinbase _ _ _)     = ⊤
 
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
         nextBlock : ∀ {block : ℕ} {time : Time}
           {inputs : List TXFieldWithId}
           {outSize : ℕ} {amount : Amount}
@@ -372,12 +492,27 @@ module Crypto
           {outputs : VectorOutput time outSize amount}
           (tx : TX {time} {block} {inputs} {outSize} tr outputs)
           → ℕ
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
         nextBlock (normalTX genesisTree _ _ _) = zero
-        nextBlock {block} (normalTX (txtree _ (normalTX _ _ _ _) _) _ _ _) = block
-        nextBlock {block} (normalTX (txtree _ (coinbase _ _ _) _) _ _ _) = suc block
+        nextBlock {block} (normalTX (txtree _
+          (normalTX _ _ _ _) _) _ _ _) = block
+        nextBlock {block} (normalTX (txtree _
+          (coinbase _ _ _) _) _ _ _) = suc block
         nextBlock (coinbase genesisTree _ _) = zero
-        nextBlock {block} (coinbase (txtree _ (normalTX _ _ _ _) _) _ _) = block
-        nextBlock {block} (coinbase (txtree _ (coinbase _ _ _) _) _ _) = suc block
+        nextBlock {block} (coinbase (txtree _
+          (normalTX _ _ _ _) _) _ _) = block
+        nextBlock {block} (coinbase (txtree _
+          (coinbase _ _ _) _) _ _) = suc block
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
         inputsTX : ∀ {block : ℕ} {time : Time}
           {inputs : List TXFieldWithId}
@@ -389,6 +524,11 @@ module Crypto
           → List TXFieldWithId
         inputsTX (normalTX _ SubInputs _ _) = list-sub SubInputs
         inputsTX {_} {_} {inputs} (coinbase _ _ _) = inputs
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
         postulate
           incQtTx : ∀ {qtTransactions : tQtTxs}
@@ -405,6 +545,11 @@ module Crypto
                 (isCoinbase tx))
             → tQtTxs
 
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
         incFees : ∀ {block : ℕ} {time : Time}
           {inputs : List TXFieldWithId}
           {outSize : ℕ} {amount : Amount}
@@ -420,11 +565,21 @@ module Crypto
           + totalFees
         incFees (coinbase tr outputs _) = zero
 
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
         _out≡Fee_+RewardBlock_ : (amount : Amount)
           (totalFees : Amount)
           (block : ℕ) → Set
         amount out≡Fee totalFees +RewardBlock block =
           amount ≡ totalFees + blockReward block
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
 
       data nextTXTree :
@@ -433,26 +588,40 @@ module Crypto
         {outputs₁ : List TXFieldWithId}
         {totalFees₁ : Amount}
         {qtTransactions₁ : tQtTxs}
-        (txTree₁ : TXTree time₁ block₁ outputs₁ totalFees₁ qtTransactions₁)
+        (txTree₁ : TXTree time₁ block₁ outputs₁
+          totalFees₁ qtTransactions₁)
 
         {block₂ : ℕ}
         {time₂ : Time}
         {outputs₂ : List TXFieldWithId}
         {totalFees₂ : Amount}
         {qtTransactions₂ : tQtTxs}
-        (txTree₂ : TXTree time₂ block₂ outputs₂ totalFees₂ qtTransactions₂)
+        (txTree₂ : TXTree time₂ block₂ outputs₂
+          totalFees₂ qtTransactions₂)
         → Set where
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
         firstTX : ∀ {block time outputs totalFees qtTransactions}
           (txTree : TXTree time block outputs totalFees qtTransactions)
           → nextTXTree txTree txTree
         nextTX : ∀ {block₁ time₁ outputs₁ totalFees₁ qtTransactions₁}
-          {txTree₁ : TXTree time₁ block₁ outputs₁ totalFees₁ qtTransactions₁}
+          {txTree₁ : TXTree time₁ block₁
+            outputs₁ totalFees₁ qtTransactions₁}
 
           {block₂ time₂ outputs₂ totalFees₂ qtTransactions₂}
-          {txTree₂ : TXTree time₂ block₂ outputs₂ totalFees₂ qtTransactions₂}
+          {txTree₂ : TXTree time₂ block₂
+            outputs₂ totalFees₂ qtTransactions₂}
 
           (nxTree : nextTXTree txTree₁ txTree₂)
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
           {outSize amount}
           {outputTX : VectorOutput time₂ outSize amount}
@@ -463,24 +632,45 @@ module Crypto
               (isCoinbase tx))
           → nextTXTree txTree₁ (txtree txTree₂ tx proofLessQtTX)
 
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
       firstTreesInBlock : ∀
         {block time outputs totalFees qtTransactions}
         (tree : TXTree time block outputs totalFees qtTransactions)
         → Set
       firstTreesInBlock genesisTree = ⊤
       firstTreesInBlock (txtree genesisTree _ _) = ⊥
-      firstTreesInBlock (txtree (txtree _ (normalTX _ _ _ _) _) _ _) = ⊥
-      firstTreesInBlock (txtree (txtree _ (coinbase _ _ _) _) _ _) = ⊤
+      firstTreesInBlock (txtree (txtree _
+        (normalTX _ _ _ _) _) _ _) = ⊥
+      firstTreesInBlock (txtree (txtree _
+        (coinbase _ _ _) _) _ _) = ⊤
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
       isFirstTreeInBlock : ∀
         {block time outputs totalFees qtTransactions}
         (tree : TXTree time block outputs totalFees qtTransactions)
         → Dec (firstTreesInBlock tree)
       isFirstTreeInBlock genesisTree = yes tt
-      isFirstTreeInBlock (txtree genesisTree (normalTX _ _ _ _) _) = no λ x → x
-      isFirstTreeInBlock (txtree genesisTree (coinbase _ _ _) _) = no λ x → x
-      isFirstTreeInBlock (txtree (txtree _ (normalTX _ _ _ _) _) _ _) = no λ x → x
-      isFirstTreeInBlock (txtree (txtree _ (coinbase _ _ _) _) _ _) = yes tt
+      isFirstTreeInBlock (txtree genesisTree
+        (normalTX _ _ _ _) _) = no λ x → x
+      isFirstTreeInBlock (txtree genesisTree
+        (coinbase _ _ _) _) = no λ x → x
+      isFirstTreeInBlock (txtree (txtree _
+        (normalTX _ _ _ _) _) _ _) = no λ x → x
+      isFirstTreeInBlock (txtree (txtree _
+        (coinbase _ _ _) _) _ _) = yes tt
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
       coinbaseTree : ∀
         {block time outputs totalFees qtTransactions}
@@ -490,25 +680,43 @@ module Crypto
       coinbaseTree (txtree _ (normalTX _ _ _ _) _) = ⊥
       coinbaseTree (txtree _ (coinbase _ _ _) _) = ⊤
 
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
       record Block
         {block₁ : ℕ}
         {time₁ : Time}
         {outputs₁ : List TXFieldWithId}
         {totalFees₁ : Amount}
         {qtTransactions₁ : tQtTxs}
-        (txTree₁ : TXTree time₁ block₁ outputs₁ totalFees₁ qtTransactions₁)
+        (txTree₁ : TXTree time₁ block₁ outputs₁
+          totalFees₁ qtTransactions₁)
 
         {time₂ : Time}
         {outputs₂ : List TXFieldWithId}
         {totalFees₂ : Amount}
         {qtTransactions₂ : tQtTxs}
-        (txTree₂ : TXTree time₂ block₁ outputs₂ totalFees₂ qtTransactions₂)
+        (txTree₂ : TXTree time₂ block₁ outputs₂
+          totalFees₂ qtTransactions₂)
         : Set where
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
         constructor blockc
         field
           nxTree           : nextTXTree txTree₁ txTree₂
           fstBlock         : firstTreesInBlock txTree₁
           sndBlockCoinbase : coinbaseTree txTree₂
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
       fstTree→coinbase : ∀
         {block time outputs totalFees qtTransactions}
@@ -522,9 +730,22 @@ module Crypto
             (isCoinbase tx)}
         (fstTree : firstTreesInBlock (txtree tree tx proofLessQtTX))
         → coinbaseTree tree
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
       fstTree→coinbase {_} {_} {_} {_} {_} {genesisTree} ()
-      fstTree→coinbase {_} {_} {_} {_} {_} {txtree _ (normalTX _ _ _ _) _} ()
-      fstTree→coinbase {_} {_} {_} {_} {_} {txtree _ (coinbase _ _ _) _} _ = tt
+      fstTree→coinbase {_} {_} {_} {_} {_}
+        {txtree _ (normalTX _ _ _ _) _} ()
+      fstTree→coinbase {_} {_} {_} {_} {_}
+        {txtree _ (coinbase _ _ _) _} _ = tt
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
       data Blockchain :
         {block₁ : ℕ}
@@ -532,30 +753,45 @@ module Crypto
         {outputs₁ : List TXFieldWithId}
         {totalFees₁ : Amount}
         {qtTransactions₁ : tQtTxs}
-        {txTree₁ : TXTree time₁ block₁ outputs₁ totalFees₁ qtTransactions₁}
+        {txTree₁ : TXTree time₁ block₁ outputs₁
+          totalFees₁ qtTransactions₁}
 
         {time₂ : Time}
         {outputs₂ : List TXFieldWithId}
         {totalFees₂ : Amount}
         {qtTransactions₂ : tQtTxs}
-        {txTree₂ : TXTree time₂ block₁ outputs₂ totalFees₂ qtTransactions₂}
+        {txTree₂ : TXTree time₂ block₁ outputs₂ totalFees₂
+          qtTransactions₂}
         (block : Block txTree₁ txTree₂)
         → Set where
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
           fstBlock' :
             {block₁ : ℕ}
             {time₁ : Time}
             {outputs₁ : List TXFieldWithId}
             {totalFees₁ : Amount}
             {qtTransactions₁ : tQtTxs}
-            {txTree₁ : TXTree time₁ block₁ outputs₁ totalFees₁ qtTransactions₁}
+            {txTree₁ : TXTree time₁ block₁ outputs₁ totalFees₁
+              qtTransactions₁}
 
             {time₂ : Time}
             {outputs₂ : List TXFieldWithId}
             {totalFees₂ : Amount}
             {qtTransactions₂ : tQtTxs}
-            {txTree₂ : TXTree time₂ block₁ outputs₂ totalFees₂ qtTransactions₂}
+            {txTree₂ : TXTree time₂ block₁ outputs₂ totalFees₂
+              qtTransactions₂}
             (block : Block txTree₁ txTree₂)
             → Blockchain block
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
           addBlock :
             {block-p₁ : ℕ}
@@ -563,20 +799,28 @@ module Crypto
             {outputs-p₁ : List TXFieldWithId}
             {totalFees-p₁ : Amount}
             {qtTransactions-p₁ : tQtTxs}
-            {txTree-p₁ : TXTree time-p₁ block-p₁ outputs-p₁ totalFees-p₁ qtTransactions-p₁}
+            {txTree-p₁ : TXTree time-p₁ block-p₁
+              outputs-p₁ totalFees-p₁ qtTransactions-p₁}
 
             {time-p₂ : Time}
             {outputs-p₂ : List TXFieldWithId}
             {totalFees-p₂ : Amount}
             {qtTransactions-p₂ : tQtTxs}
-            {txTree-p₂ : TXTree time-p₂ block-p₁ outputs-p₂ totalFees-p₂ qtTransactions-p₂}
+            {txTree-p₂ : TXTree time-p₂ block-p₁
+              outputs-p₂ totalFees-p₂ qtTransactions-p₂}
             {block-p : Block txTree-p₁ txTree-p₂}
             (blockchain : Blockchain block-p)
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
             {outSize : ℕ}
             {amount : Amount}
             {outputTX : VectorOutput time-p₂ outSize amount}
-            {tx : TX {time-p₂} {block-p₁} {outputs-p₂} {outSize} txTree-p₂ outputTX}
+            {tx : TX {time-p₂} {block-p₁}
+              {outputs-p₂} {outSize} txTree-p₂ outputTX}
             {proofLessQtTX :
                 toℕ qtTransactions-p₂ ≤ totalQtSub1
                 ⊎
@@ -586,9 +830,16 @@ module Crypto
             {outputs₂ : List TXFieldWithId}
             {totalFees₂ : Amount}
             {qtTransactions₂ : tQtTxs}
-            {txTree₂ : TXTree time₂ (nextBlock tx) outputs₂ totalFees₂ qtTransactions₂}
-            (block : Block (txtree txTree-p₂ tx proofLessQtTX) txTree₂)
+            {txTree₂ : TXTree time₂ (nextBlock tx) outputs₂
+              totalFees₂ qtTransactions₂}
+            (block : Block (txtree txTree-p₂ tx proofLessQtTX)
+              txTree₂)
             → Blockchain block
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
       record RawBlock
         {block : ℕ}
@@ -596,16 +847,29 @@ module Crypto
         {outputs₂ : List TXFieldWithId}
         {totalFees₂ : Amount}
         {qtTransactions₂ : tQtTxs}
-        (tree₂ : TXTree time₂ block outputs₂ totalFees₂ qtTransactions₂)
+        (tree₂ : TXTree time₂ block outputs₂ totalFees₂
+          qtTransactions₂)
         : Set where
         constructor rawBlockc
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
         field
           {time}           : Time
           {outputs}        : List TXFieldWithId
           {totalFees}      : Amount
           {qtTransactions} : tQtTxs
-          {tree}           : TXTree time block outputs totalFees qtTransactions
+          {tree}           : TXTree time block
+            outputs totalFees qtTransactions
           rawBlock         : Block tree tree₂
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
       isCoinbaseTree : ∀
         {block time outputs totalFees qtTransactions}
@@ -615,23 +879,41 @@ module Crypto
       isCoinbaseTree (txtree _ (normalTX _ _ _ _) _) = no λ x → x
       isCoinbaseTree (txtree _ (coinbase _ _ _) _) = yes tt
 
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
       record fstTree
         {block : ℕ}
         {time₂ : Time}
         {outputs₂ : List TXFieldWithId}
         {totalFees₂ : Amount}
         {qtTransactions₂ : tQtTxs}
-        (txTree₂ : TXTree time₂ block outputs₂ totalFees₂ qtTransactions₂)
+        (txTree₂ : TXTree time₂ block outputs₂
+          totalFees₂ qtTransactions₂)
         : Set where
         constructor fstTreec
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
         field
           {time}               : Time
           {outputs}            : List TXFieldWithId
           {totalFees}          : Amount
           {qtTransactions}     : tQtTxs
-          {tree}               : TXTree time block outputs totalFees qtTransactions
+          {tree}               : TXTree time block
+            outputs totalFees qtTransactions
           nxTree               : nextTXTree tree txTree₂
           fstBlockc            : firstTreesInBlock tree
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
       record fstTree₂
         {block : ℕ}
@@ -639,27 +921,47 @@ module Crypto
         {outputs₂ : List TXFieldWithId}
         {totalFees₂ : Amount}
         {qtTransactions₂ : tQtTxs}
-        (txTree₂ : TXTree time₂ block outputs₂ totalFees₂ qtTransactions₂)
+        (txTree₂ : TXTree time₂ block outputs₂ totalFees₂
+          qtTransactions₂)
         : Set where
         pattern
         constructor fstTreec₂
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
         field
           {block₂}              : ℕ
           {time}               : Time
           {outputs}            : List TXFieldWithId
           {totalFees}          : Amount
           {qtTransactions}     : tQtTxs
-          {tree}               : TXTree time block₂ outputs totalFees qtTransactions
+          {tree}               : TXTree time block₂
+            outputs totalFees qtTransactions
           eq                   : block ≡ block₂
           nxTree               : nextTXTree tree txTree₂
           fstBlockc            : firstTreesInBlock tree
 
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
       fstTree₂→fstTree : ∀
         {block time₂ outputs₂ totalFees₂ qtTransactions₂}
-        {txTree₂ : TXTree time₂ block outputs₂ totalFees₂ qtTransactions₂}
+        {txTree₂ : TXTree time₂ block outputs₂ totalFees₂
+          qtTransactions₂}
         (fTree₂ : fstTree₂ txTree₂)
         → fstTree txTree₂
-      fstTree₂→fstTree (fstTreec₂ refl nxTree fstBlockc) = fstTreec nxTree fstBlockc
+      fstTree₂→fstTree (fstTreec₂ refl nxTree fstBlockc)
+        = fstTreec nxTree fstBlockc
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
       record fstTreeChange
         (block : ℕ)
@@ -670,17 +972,30 @@ module Crypto
         : Set where
         constructor fstTreeChangedc
         field
-          {tree}      : TXTree time block outputs totalFees qtTransactions
+          {tree}      : TXTree time block outputs
+            totalFees qtTransactions
           ftree       : fstTree tree
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
       changeBlockType : ∀
         {block block₂ time outputs totalFees qtTransactions}
         {tree : TXTree time block outputs totalFees qtTransactions}
-        {txTree : TXTree time block outputs totalFees qtTransactions}
+        {txTree : TXTree time block outputs
+          totalFees qtTransactions}
         (fstTree : fstTree tree)
         (eq : block ≡ block₂)
-        → fstTreeChange block₂ time outputs totalFees qtTransactions
+        → fstTreeChange block₂ time outputs
+          totalFees qtTransactions
       changeBlockType fstTree refl = fstTreeChangedc fstTree
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
       record TXChange
         {block : ℕ}
@@ -694,6 +1009,12 @@ module Crypto
         {qtTransactions : tQtTxs}
         (tree : TXTree time block outputs totalFees qtTransactions)
         (tx : TX tree outputTX)
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
         (proofLess :
           toℕ qtTransactions ≤ totalQtSub1
           ⊎
@@ -703,16 +1024,30 @@ module Crypto
         field
           fTree                 : fstTree (txtree tree tx proofLess)
 
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
 
       changeTXType : ∀
-        {block time₁ time₂ totalFees₁ totalFees₂ outputs₁ outputs₂ qtTransactions₁ qtTransactions₂
+        {block time₁ time₂ totalFees₁ totalFees₂
+          outputs₁ outputs₂ qtTransactions₁ qtTransactions₂
         outSize amount}
         {outputTX : VectorOutput time₂ outSize amount}
-        {tree : TXTree time₁ block outputs₁ totalFees₁ qtTransactions₁}
-        {tree₂ : TXTree time₂ block outputs₂ totalFees₂ qtTransactions₂}
+        {tree : TXTree time₁ block
+          outputs₁ totalFees₁ qtTransactions₁}
+        {tree₂ : TXTree time₂ block outputs₂
+          totalFees₂ qtTransactions₂}
         (nxTree : nextTXTree tree tree₂)
         (fstBlockc : firstTreesInBlock tree)
         (tx : TX tree₂ outputTX)
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
         (proofLess :
           toℕ qtTransactions₂ ≤ totalQtSub1
           ⊎
@@ -723,6 +1058,11 @@ module Crypto
         let nxTX = nextTX nxTree tx proof
             ftree = fstTree₂→fstTree (fstTreec₂ eq nxTX fblock)
         in TXChangedc ftree
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
 
       fstTreeBlock : ∀
@@ -737,51 +1077,90 @@ module Crypto
         (tree : TXTree time block outputs totalFees qtTransactions)
         → fstTree tree
       firstTree genesisTree = fstTreec (firstTX genesisTree) tt
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
       firstTree {block₂} (txtree {block₁} tree tx proofLessQtTX)
         with isFirstTreeInBlock (txtree tree tx proofLessQtTX)
-      ... | yes isFirst = fstTreec (firstTX (txtree tree tx proofLessQtTX)) isFirst
+      ... | yes isFirst = fstTreec
+        (firstTX (txtree tree tx proofLessQtTX)) isFirst
       ... | no ¬first with block₂ ≟ block₁
       ...   | yes eq = let ftree = firstTree tree
                            nxTree = fstTree.nxTree ftree
                            fstBlock = fstTree.fstBlockc ftree
-                           chgType = changeTXType nxTree fstBlock tx proofLessQtTX eq
+                           chgType = changeTXType nxTree
+                             fstBlock tx proofLessQtTX eq
                        in TXChange.fTree chgType
       ...   | no ¬eq = ⊥-elim impossible
                 where postulate impossible : ⊥
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
       txTree→Block : ∀
         {block time outputs totalFees qtTransactions}
         (tree : TXTree time block outputs totalFees qtTransactions)
         → Dec (RawBlock tree)
       txTree→Block genesisTree =
-        no λ { (rawBlockc (blockc _ _ sndBlockCoinbase)) → sndBlockCoinbase }
+        no λ { (rawBlockc (blockc _ _ sndBlockCoinbase))
+        → sndBlockCoinbase }
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
       txTree→Block (txtree tree tx proofLessQtTX)
         with isCoinbaseTree (txtree tree tx proofLessQtTX)
       ... | no ¬isCoinbase =
-              no λ{ (rawBlockc (blockc _ _ coinbaseTree)) → ¬isCoinbase coinbaseTree}
-      ... | yes isCoinbase = let fTree = firstTree (txtree tree tx proofLessQtTX)
+              no λ{ (rawBlockc (blockc _ _ coinbaseTree))
+                → ¬isCoinbase coinbaseTree}
+      ... | yes isCoinbase = let fTree = firstTree
+                                   (txtree tree tx proofLessQtTX)
                                  nxTree = fstTree.nxTree fTree
                                  fBlock = fstTree.fstBlockc fTree
-                             in yes (rawBlockc (blockc nxTree fBlock isCoinbase))
+                             in yes (rawBlockc
+                               (blockc nxTree fBlock isCoinbase))
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
 
       {-# TERMINATING #-}
       block→blockchain : ∀
         {block₁ time₁ outputs₁ totalFees₁ qtTransactions₁}
-        {txTree₁ : TXTree time₁ block₁ outputs₁ totalFees₁ qtTransactions₁}
+        {txTree₁ : TXTree time₁ block₁ outputs₁
+          totalFees₁ qtTransactions₁}
         {time₂ outputs₂ totalFees₂ qtTransactions₂}
-        {txTree₂ : TXTree time₂ block₁ outputs₂ totalFees₂ qtTransactions₂}
+        {txTree₂ : TXTree time₂ block₁ outputs₂
+          totalFees₂ qtTransactions₂}
         (block : Block txTree₁ txTree₂)
         → Blockchain block
       block→blockchain {_} {_} {_} {_} {_} {genesisTree}
         (blockc nxTree fstBlock₁ sndBlockCoinbase) =
         fstBlock' (blockc nxTree tt sndBlockCoinbase)
-      block→blockchain {_} {_} {_} {_} {_} {txtree tree tx proofLessQtTX}
+
+\end{code}
+\end{frame}
+\begin{frame}
+\begin{code}
+
+      block→blockchain {_} {_} {_} {_} {_} {txtree tree tx
+        proofLessQtTX}
         (blockc nxTree fstBlock₁ sndBlockCoinbase)
         with firstTree tree
       ... | fstTreec nxTree₁ fstBlockc = addBlock
-        (block→blockchain (blockc nxTree₁ fstBlockc (fstTree→coinbase fstBlock₁)))
+        (block→blockchain (blockc nxTree₁ fstBlockc
+          (fstTree→coinbase fstBlock₁)))
         (blockc nxTree fstBlock₁ sndBlockCoinbase)
 \end{code}
+\end{frame}
 
 
 
