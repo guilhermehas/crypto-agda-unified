@@ -113,6 +113,22 @@
 \end{frame}
 
 \begin{frame}
+   \frametitle{Definition}
+\begin{itemize}
+     \item A cryptocurrency is a decentralized means of exchange that uses technology
+       blockchain and cryptography to ensure the validity of transactions and the creation of new currency units.
+     \item Bitcoin is considered the world's first decentralized digital currency,
+       constituting an alternative economic system (\foreignquote{english}{peer-to-peer electronic cash system})
+       and responsible for the resurgence of the free banking system.
+       \cite{nakamoto2008bitcoin}
+     \item Bitcoin allows financial transactions without intermediaries,
+       but verified by all users (network nodes).
+       These transactions are recorded in a distributed database (a decentralized network),
+       called \foreignquote{english}{blockchain}.
+     \end{itemize}
+\end{frame}
+
+\begin{frame}
   \frametitle{Imports}
 \begin{code}
 
@@ -131,6 +147,36 @@ open import Relation.Nullary
 open import Utils
 
 \end{code}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Bitcoin Account}
+    \includegraphics[width=11cm, height=7cm]{privatekey}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Hash Function}
+  \begin{itemize}
+    \item A hash function serves to compress large data into small data.
+    \item It is assumed that two different files will always have different hashes (injectivity),
+      since the probability of two files having the same hash is negligible.
+    \item By the pigeon house principle, the injectivity of the hash is impossible.
+      However, two files that have the same hash were never found in SHA-256.
+    \item Google found two files that had the same hash in SHA-1.
+      Soon after, this hash function stopped being used.
+    \item It must also not be possible to compute the inverse of the hash function.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Cryptographic Functions}
+  \begin{itemize}
+    \item In Bitcoin, there is a private and a public key.
+    \item The private key is used to sign the transaction.
+    \item The public key, derived from the private key,
+      serves to demonstrate that the user is the owner of the private key.
+    \item These functions are based on the SHA-256 hash function.
+  \end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -160,11 +206,6 @@ open HasMsg
 \end{frame}
 
 \begin{frame}
-  \frametitle{Bitcoin Account}
-    \includegraphics[width=11cm, height=7cm]{privatekey}
-\end{frame}
-
-\begin{frame}
   \frametitle{Crypto Constants}
 \begin{code}
 
@@ -185,6 +226,7 @@ module Crypto
 
 \end{code}
 \end{frame}
+
 \begin{frame}
   \frametitle{Crypto Postulates}
 \begin{code}
@@ -208,6 +250,7 @@ module Crypto
 
 \end{code}
 \end{frame}
+
 \begin{frame}
   \frametitle{Message Signed}
 \begin{code}
@@ -221,6 +264,20 @@ module Crypto
 
 \end{code}
 \end{frame}
+
+\begin{frame}
+   \frametitle{Transactions}
+   \begin{itemize}
+     \item From transactions, it is possible to send Bitcoins from one account to another.
+     \item Transactions are like a check. The individual specifies an amount and signs the transaction.
+     \item In Bitcoin transaction, previously unspent transactions must be specified.
+       In the case of the miner transaction, this should not be specified.
+       Furthermore, it must be specified who should receive the money from these transactions and
+       also the transaction must have a signature generated from the private key proving
+       that the public key user agreed to make that transaction.
+   \end{itemize}
+\end{frame}
+
 \begin{frame}
 \begin{code}
 
@@ -403,8 +460,30 @@ module Crypto
 \end{frame}
 
 \begin{frame}
+   \frametitle{Unspent Transaction Model}
+   \begin{itemize}
+     \item In the unspent transaction model, every transaction is added to the transaction tree.
+     \item To find out the balance of an account it is necessary to look at all unspent transactions
+       sent to that account.
+     \item To transact the currency it is necessary to use as input the outputs of
+       other unspent transactions.
+   \end{itemize}
+\end{frame}
+
+\begin{frame}
   \frametitle{Bitcoin UTXO}
     \includegraphics[width=11cm, height=7cm]{utxo}
+\end{frame}
+
+\begin{frame}
+   \frametitle{Transaction Trees}
+   \begin{itemize}
+     \item The idea of the transaction tree is to gather all transactions into a tree.
+     \item In this way, it is possible to synthesize the information of all transactions
+       calculating just their hash.
+     \item With the injectivity property of the hash, it is possible to verify that two trees
+       are equal in constant time complexity.
+   \end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -694,6 +773,21 @@ module Crypto
 \end{code}
 }
 % \end{frame}
+
+\begin{frame}
+   \frametitle{Blocks and Blockchain}
+   \begin{itemize}
+     \item Transactions are embedded in blocks where they are stored.
+     \item In Bitcoin, there is a chain of blocks called a blockchain.
+       The first block is called genesis block and
+       every 10 minutes on average, a new block is added to this blockchain.
+     \item There is a limit of transactions that each block can have (in Bitcoin, it's 10 MB of data).
+       Therefore, it is important to pay a transaction fee for this transaction to be included in the
+       blockchain.
+     \item If there are two blockchains on different computers, it is considered
+       the valid blockchain the one with the most blocks.
+   \end{itemize}
+\end{frame}
 
 \begin{frame}
 \frametitle{Blockchain}
@@ -1195,9 +1289,45 @@ module Crypto
 }
 % \end{frame}
 
+\begin{frame}
+   \frametitle{Mining}
+   \begin{itemize}
+     \item Every block has a cryptographic problem to be solved. That is,
+       you need to calculate a nounce value such that the block hash
+       is less than a specified value.
+     \item This specified value is calculated from the average of the last 2016 blocks (2 weeks)
+       so that the average block mining is 10 minutes.
+   \end{itemize}
+\end{frame}
 
+\begin{frame}{Conclusions}
+  \begin{itemize}
+    \item In this work, all specifications were placed on types.
+    \item In other works, the approach may be different.
+      That is, without any information on types and all proofs done separately.
+    \item This approach was not chosen as it is much simpler to understand the code
+      when types are more expressive.
+  \end{itemize}
+\end{frame}
 
+\begin{frame}{Missing Details}
+  \begin{itemize}
+    \item Calculate block hash and block nounce field.
+    \item Change protocol to receive entire block instead of individual transactions.
+    \item Add if there is a blockchain larger than the server's size.
+  \end{itemize}
+\end{frame}
 
+\begin{frame}{More complex parts to add}
+  \begin{itemize}
+    \item Formal modeling of the blockchain as a distributed system.
+    \item Create client code to interact with nodes.
+    \item Specify the protocol between client and node and between node to node.
+      However, the hardest part has already been coded, which is adding the evidence
+      to the raw data that the client sends.
+    \item Add a scripting language to the cryptocurrency.
+  \end{itemize}
+\end{frame}
 
 \section{Bibliography}
 
