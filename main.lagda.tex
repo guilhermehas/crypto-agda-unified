@@ -107,7 +107,7 @@
 \begin{frame}
 \frametitle{Goal}
 \begin{itemize}
-  \item Program a cryptocurrency (similar to Bitcoin) in Agda, which is dependently typed.
+  \item Using Agda to create a formal definition, using dependent types, of a crypto currency similar to Bitcoin.
     \includegraphics[width=8cm, height=5cm]{TwoBitcoins}
 \end{itemize}
 \end{frame}
@@ -118,7 +118,7 @@
      \item A cryptocurrency is a decentralized means of exchange that uses technology
        blockchain and cryptography to ensure the validity of transactions and the creation of new currency units.
      \item Bitcoin is considered the world's first decentralized digital currency,
-       constituting an alternative economic system (\foreignquote{english}{peer-to-peer electronic cash system})
+       constituting an alternative economic system (peer-to-peer electronic cash system)
        and responsible for the resurgence of the free banking system.
        \cite{nakamoto2008bitcoin}
      \item Bitcoin allows financial transactions without intermediaries,
@@ -126,6 +126,19 @@
        These transactions are recorded in a distributed database (a decentralized network),
        called \foreignquote{english}{blockchain}.
      \end{itemize}
+\end{frame}
+
+\begin{frame}
+   \frametitle{Ethical Aspects}
+\begin{itemize}
+  \item In Satoshi Nakamoto's vision, Bitcoin would be minerated by everyone.
+    But nowadays, there are just few miners who minerated it on few places of Earth.
+  \item Because of proof of work of Bitcoin, mining it spends a lot of energy.
+    However, most of energy to mine it is green. It is usually geothermical energy
+    that would not be used where it was produced.
+  \item Some other crypto currencies, such Cardano, use Proof of Stake to solve this
+  problem. In addition to, mining rewards go to people who have a Proof of Stake crypto currency.
+\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -195,14 +208,20 @@ infixr 5 _+msg_
 record HasMsg (A : Set) : Set₁ where
   field
     toMsgPrimitive : A → MsgPrimitive
+    invertMsg      : MsgPrimitive → A
+    invertibleMsg  : ∀ x → invertMsg {A} (toMsgPrimitive x) ≡ x
 
+open HasMsg
+\end{code}
+
+\AgdaHide{
+\begin{code}
 toMsg : {A : Set} ⦃ _ : HasMsg A ⦄ → A → Msg
 toMsg {A} ⦃ record { toMsgPrimitive = toMsgPrimitive } ⦄ x
   = msgPrimitive {A} (toMsgPrimitive x)
-
-open HasMsg
-
 \end{code}
+}
+
 \end{frame}
 
 \begin{frame}
@@ -221,9 +240,6 @@ module Crypto
 
   Amount = ℕ
   Time = ℕ
-  sucTime : ℕ → ℕ
-  sucTime = suc
-
 \end{code}
 \end{frame}
 
@@ -233,14 +249,15 @@ module Crypto
 
   record CryptoPostulates : Set₁ where
     field
-      _priv≡pub_ : PrivateKey → PublicKey → Set
+      _priv≡pub_        : PrivateKey → PublicKey → Set
       publicKey2Address : PublicKey → Address
-      Signed : Msg → PublicKey → Signature → Set
-      Signed? : (msg : Msg) (pk : PublicKey)
+      Signed            : Msg → PublicKey → Signature → Set
+      Signed?           : (msg : Msg) (pk : PublicKey)
         (sig : Signature) → Dec $ Signed msg pk sig
       hashMsg : Msg → Hashed
-      hash-inj : ∀ m n → hashMsg m ≡ hashMsg n
-                  → m ≡ n
+      hash-inj : ∀ m n
+        → hashMsg m ≡ hashMsg n
+        →         m ≡ n
 
   module CryptoWithPostulates
     (crypto-postulates : CryptoPostulates)
@@ -292,19 +309,16 @@ module Crypto
       field
         time     : Time
         position : ℕ
-        amount   : Amount
-        address  : Address
-
-    removeId : TXFieldWithId → TXField
-    removeId record { time = time ; position = position
-      ; amount = amount ; address = address }
-      = record { amount = amount ; address = address }
-
+        txField  : TXField
+      open TXField txField public
 \end{code}
 \end{frame}
 % \begin{frame}
 \AgdaHide{
 \begin{code}
+    removeId : TXFieldWithId → TXField
+    removeId tx = txfield amount address
+      where open TXFieldWithId tx
 
     data VectorOutput : (time : Time) (size : ℕ)
       (amount : Amount) → Set where
@@ -345,10 +359,10 @@ module Crypto
       = toMsg amount +msg toMsg address
 
     TXId→Msg : (tx : TXFieldWithId) → Msg
-    TXId→Msg record { time = time ; position = position
-      ; amount = amount ; address = address }
+    TXId→Msg tx
       = toMsg time +msg toMsg position +msg
         toMsg amount +msg toMsg address
+      where open TXFieldWithId tx
 
     txInput→Msg : (input : TXFieldWithId) (outputs : List TXField)
       → NonNil outputs → Msg
@@ -387,7 +401,7 @@ module Crypto
     txFieldList→TotalAmount : (txs : List TXFieldWithId) → Amount
     txFieldList→TotalAmount [] = zero
     txFieldList→TotalAmount (x ∷ txs)
-      = txFieldList→TotalAmount txs + amount x
+      = txFieldList→TotalAmount txs + TXFieldWithId.amount x
       where open TXFieldWithId
 
 \end{code}
@@ -520,7 +534,7 @@ module Crypto
                 toℕ qtTransactions ≤ totalQtSub1
                 ⊎
                 (isCoinbase tx))
-            → TXTree (sucTime time)
+            → TXTree (suc time)
               (nextBlock tx)
               (inputsTX tx ++ VectorOutput→List outputTX)
               (incFees tx) (incQtTx tx proofLessQtTX)
