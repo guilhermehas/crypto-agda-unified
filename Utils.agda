@@ -13,6 +13,9 @@ data All {A : Set} : (P : A → Set) → List A → Set where
   [] : {P : A → Set} → All P []
   _∷_ : {x : A} {xs : List A} {P : A → Set} → P x → All P xs → All P (x ∷ xs)
 
+All-syntax = All
+syntax All-syntax (λ x → P) xs = All[ x ∈ xs ] P
+
 data SubList {A : Set} : List A → Set where
   []   : SubList []
   _¬∷_ : {xs : List A} → (x : A) → SubList xs → SubList (x ∷ xs)

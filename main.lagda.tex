@@ -411,20 +411,16 @@ module Crypto
 \begin{code}
 
     record TXSigned
-      {time      : Time}
-      {outSize   : ℕ}
-      {outAmount : Amount}
+      {time} {outSize} {outAmount}
       (inputs    : List TXFieldWithId)
       (outputs   : VectorOutput time outSize outAmount)
         : Set where
       constructor txsig
       field
         nonEmpty : NonNil inputs
-        signed   : All
-          (λ input →
-          SignedWithSigPbk (txEls→MsgVecOut input outputs)
-                          (TXFieldWithId.address input))
-                          inputs
+        signed   : All[ input ∈ inputs ]
+          (SignedWithSigPbk (txEls→MsgVecOut input outputs)
+          (TXFieldWithId.address input))
         in≥out : txFieldList→TotalAmount inputs ≥ outAmount
 
 \end{code}
@@ -438,11 +434,9 @@ module Crypto
       (outputs : List TXFieldWithId) : Set where
       field
         nonEmpty : NonNil inputs × NonNil outputs
-        signed   : All
-          (λ input →
-          SignedWithSigPbk (txEls→Msg input outputs nonEmpty)
+        signed   : All[ input ∈ inputs ]
+          (SignedWithSigPbk (txEls→Msg input outputs nonEmpty)
                           (TXFieldWithId.address input))
-                          inputs
         in≥out : txFieldList→TotalAmount inputs
                  ≥ txFieldList→TotalAmount outputs
 
