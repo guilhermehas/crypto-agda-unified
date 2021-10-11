@@ -76,6 +76,7 @@
 \newunicodechar{≤}{$\leqslant$}
 \newunicodechar{≥}{$\geqslant$}
 \newunicodechar{≟}{$\doteq$}
+\newunicodechar{∈}{$\in$}
 % \newunicodechar{}{$$}
 
 
@@ -240,6 +241,7 @@ module Crypto
 
   Amount = ℕ
   Time = ℕ
+  BlockPosition = ℕ
 \end{code}
 \end{frame}
 
@@ -452,10 +454,9 @@ module Crypto
 \begin{frame}
   \frametitle{Blockchain constants}
 \begin{code}
-
     module WithConstants
       (totalQtSub1 : ℕ)
-      (blockReward : ℕ → ℕ)
+      (blockReward : BlockPosition → Amount)
       where
 
       totalQt : ℕ
@@ -463,7 +464,6 @@ module Crypto
 
       tQtTxs : Set
       tQtTxs = Fin $ totalQt
-
 \end{code}
 \end{frame}
 
@@ -504,7 +504,7 @@ module Crypto
 \begin{code}
 
       mutual
-        data TXTree : (time : Time) (block : ℕ)
+        data TXTree : (time : Time) (block : BlockPosition)
           (outputs : List TXFieldWithId)
           (totalFees : Amount)
           (qtTransactions : tQtTxs) → Set where
@@ -517,7 +517,7 @@ module Crypto
 \begin{code}
 
           txtree      :
-            {block : ℕ} {time : Time}
+            {block : BlockPosition} {time : Time}
             {outSize : ℕ} {amount : Amount}
             {inputs : List TXFieldWithId}
             {outputTX : VectorOutput time outSize amount}
@@ -539,7 +539,7 @@ module Crypto
   \frametitle{Transaction}
 \begin{code}
 
-        data TX {time : Time} {block : ℕ}
+        data TX {time : Time} {block : BlockPosition}
             {inputs : List TXFieldWithId} {outSize : ℕ}
             {outAmount : Amount} {totalFees : ℕ}
             {qtTransactions : tQtTxs}
@@ -571,7 +571,7 @@ module Crypto
 \AgdaHide{
 \begin{code}
 
-        isCoinbase : ∀ {block : ℕ} {time : Time}
+        isCoinbase : ∀ {block : BlockPosition} {time : Time}
           {inputs : List TXFieldWithId}
           {outSize : ℕ} {amount : Amount}
           {totalFees : ℕ} {qtTransactions : tQtTxs}
@@ -582,7 +582,7 @@ module Crypto
         isCoinbase (normalTX _ _ _ _) = ⊥
         isCoinbase (coinbase _ _ _)     = ⊤
 
-        nextBlock : ∀ {block : ℕ} {time : Time}
+        nextBlock : ∀ {block : BlockPosition} {time : Time}
           {inputs : List TXFieldWithId}
           {outSize : ℕ} {amount : Amount}
           {totalFees : ℕ} {qtTransactions : tQtTxs}
@@ -612,7 +612,7 @@ module Crypto
 -- \begin{frame}
 -- \begin{code}
 
-        inputsTX : ∀ {block : ℕ} {time : Time}
+        inputsTX : ∀ {block : BlockPosition} {time : Time}
           {inputs : List TXFieldWithId}
           {outSize : ℕ} {amount : Amount}
           {totalFees : ℕ} {qtTransactions : tQtTxs}
@@ -630,7 +630,7 @@ module Crypto
 
         postulate
           incQtTx : ∀ {qtTransactions : tQtTxs}
-            {block : ℕ} {time : Time}
+            {block : BlockPosition} {time : Time}
             {inputs : List TXFieldWithId}
             {outSize : ℕ} {amount : Amount}
             {totalFees : ℕ}
@@ -648,7 +648,7 @@ module Crypto
 -- \begin{frame}
 -- \begin{code}
 
-        incFees : ∀ {block : ℕ} {time : Time}
+        incFees : ∀ {block : BlockPosition} {time : Time}
           {inputs : List TXFieldWithId}
           {outSize : ℕ} {amount : Amount}
           {totalFees : Amount} {qtTransactions : tQtTxs}
@@ -670,7 +670,7 @@ module Crypto
 
         _out≡Fee_+RewardBlock_ : (amount : Amount)
           (totalFees : Amount)
-          (block : ℕ) → Set
+          (block : BlockPosition) → Set
         amount out≡Fee totalFees +RewardBlock block =
           amount ≡ totalFees + blockReward block
 
@@ -681,7 +681,7 @@ module Crypto
 
 
       data nextTXTree :
-        {block₁ : ℕ}
+        {block₁ : BlockPosition}
         {time₁ : Time}
         {outputs₁ : List TXFieldWithId}
         {totalFees₁ : Amount}
@@ -689,7 +689,7 @@ module Crypto
         (txTree₁ : TXTree time₁ block₁ outputs₁
           totalFees₁ qtTransactions₁)
 
-        {block₂ : ℕ}
+        {block₂ : BlockPosition}
         {time₂ : Time}
         {outputs₂ : List TXFieldWithId}
         {totalFees₂ : Amount}
@@ -812,7 +812,7 @@ module Crypto
 \begin{code}
 
       record Block
-        {block₁ : ℕ}
+        {block₁ : BlockPosition}
         {time₁ : Time}
         {outputs₁ : List TXFieldWithId}
         {totalFees₁ : Amount}
@@ -878,7 +878,7 @@ module Crypto
 \begin{code}
 
       data Blockchain :
-        {block₁ : ℕ}
+        {block₁ : BlockPosition}
         {time₁ : Time}
         {outputs₁ : List TXFieldWithId}
         {totalFees₁ : Amount}
@@ -902,7 +902,7 @@ module Crypto
 \begin{code}
 
           fstBlock' :
-            {block₁ : ℕ}
+            {block₁ : BlockPosition}
             {time₁ : Time}
             {outputs₁ : List TXFieldWithId}
             {totalFees₁ : Amount}
@@ -976,7 +976,7 @@ module Crypto
 \begin{code}
 
       record RawBlock
-        {block : ℕ}
+        {block : BlockPosition}
         {time₂ : Time}
         {outputs₂ : List TXFieldWithId}
         {totalFees₂ : Amount}
@@ -1019,7 +1019,7 @@ module Crypto
 -- \begin{code}
 
       record fstTree
-        {block : ℕ}
+        {block : BlockPosition}
         {time₂ : Time}
         {outputs₂ : List TXFieldWithId}
         {totalFees₂ : Amount}
@@ -1050,7 +1050,7 @@ module Crypto
 -- \begin{code}
 
       record fstTree₂
-        {block : ℕ}
+        {block : BlockPosition}
         {time₂ : Time}
         {outputs₂ : List TXFieldWithId}
         {totalFees₂ : Amount}
@@ -1098,7 +1098,7 @@ module Crypto
 -- \begin{code}
 
       record fstTreeChange
-        (block : ℕ)
+        (block : BlockPosition)
         (time : Time)
         (outputs : List TXFieldWithId)
         (totalFees : Amount)
@@ -1136,7 +1136,7 @@ module Crypto
         {outSize : ℕ}
         {amount : ℕ}
         {time : Time}
-        {block : ℕ}
+        {block : BlockPosition}
         {outputs : List TXFieldWithId}
         {outputTX : VectorOutput time outSize amount}
         {totalFees : Amount}
