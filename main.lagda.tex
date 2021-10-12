@@ -94,8 +94,8 @@
     {\em\textquotedblright}
 
 % Information to be included in the title page:
-\title{A Simplified version of Bitcoin, \\
-    implemented in Agda}
+\title{Formalizing Bitcoin prototype \\
+  using dependent types in Agda }
 \author[Guilherme]{Guilherme Horta Alvares da Silva}
 % \institute{Fundação Getulio Vargas}
 \date{2021}
@@ -105,10 +105,12 @@
 
 \frame{\titlepage}
 
+\section{Introduction}
+
 \begin{frame}
 \frametitle{Goal}
 \begin{itemize}
-  \item Using Agda to create a formal definition, using dependent types, of a crypto currency similar to Bitcoin.
+  \item Using Agda's dependent types to create a formal definition of a crypto currency similar to Bitcoin.
     \includegraphics[width=8cm, height=5cm]{TwoBitcoins}
 \end{itemize}
 \end{frame}
@@ -120,9 +122,9 @@
        blockchain and cryptography to ensure the validity of transactions and the creation of new currency units.
      \item Bitcoin is considered the world's first decentralized digital currency,
        constituting an alternative economic system (peer-to-peer electronic cash system).
-       \cite{nakamoto2008bitcoin}
+       % \cite{nakamoto2008bitcoin}
      \item In this project, I will define cryptographic functions, transactions, block and blockchain.
-       Distributed system aspects are out of this work.
+     \item Distributed system aspects are out of this work.
      \end{itemize}
 \end{frame}
 
@@ -159,6 +161,8 @@ open import Utils
 
 \end{code}
 \end{frame}
+
+\section{Crypto Functions}
 
 \begin{frame}
   \frametitle{Bitcoin Account}
@@ -280,6 +284,8 @@ module Crypto
       So, the code can be more general for every crypto function that have these properties.
   \end{itemize}
 \end{frame}
+
+\section{Transactions}
 
 \begin{frame}
   \frametitle{Message Signed}
@@ -420,12 +426,6 @@ module Crypto
       = txFieldList→TotalAmount txs + TXFieldWithId.amount x
       where open TXFieldWithId
 
-\end{code}
-}
-% \end{frame}
-\begin{frame}
-\begin{code}
-
     record TXSigned
       {time} {outSize} {outAmount}
       (inputs    : List TXFieldWithId)
@@ -438,6 +438,41 @@ module Crypto
           (SignedWithSigPbk (txEls→MsgVecOut input outputs)
           (TXFieldWithId.address input))
         in≥out : txFieldList→TotalAmount inputs ≥ outAmount
+
+    NonEmptyList = λ A → Σ[ xs ∈ List A ] NonNil xs
+
+    SignedWithSigPbk' : ∀
+      {time} {outSize} {outAmount}
+      (input    : TXFieldWithId)
+      (outputs   : VectorOutput time outSize outAmount)
+      → Set
+    SignedWithSigPbk' input outputs = SignedWithSigPbk
+      (txEls→MsgVecOut input outputs) (TXFieldWithId.address input)
+
+    All' : {A : Set} (P : A → Set) → NonEmptyList A → Set
+    All' P (x ∷ xs , tt) = All P (x ∷ xs)
+
+    All'-syntax = All'
+    syntax All'-syntax (λ x → P) xs = All'[ x ∈ xs ] P
+
+    totalSpent : NonEmptyList TXFieldWithId → Amount
+    totalSpent (x ∷ xs , tt) = txFieldList→TotalAmount (x ∷ xs)
+\end{code}
+}
+% \end{frame}
+\begin{frame}
+\begin{code}
+
+    record TXSigned'
+      {time} {outSize} {outAmount}
+      (inputs    : NonEmptyList TXFieldWithId)
+      (outputs   : VectorOutput time outSize outAmount)
+        : Set where
+      constructor txsig
+      field
+        signed   : All'[ input ∈ inputs ]
+          (SignedWithSigPbk' input outputs)
+        in≥out : totalSpent inputs ≥ outAmount
 
 \end{code}
 \end{frame}
@@ -465,6 +500,9 @@ module Crypto
 \end{code}
 }
 % \end{frame}
+
+\section{Blockchain}
+
 \begin{frame}
   \frametitle{Blockchain constants}
 \begin{code}
@@ -501,7 +539,7 @@ module Crypto
    \frametitle{Transaction Trees}
    \begin{itemize}
      \item The idea of the transaction tree is to gather all transactions into a tree.
-     \item In this way, it is possible to synthesize the information of all transactions
+     \item In this way, it is possible to fingerprint the information of all transactions
        calculating just their hash.
      \item With the injectivity property of the hash, it is possible to verify that two trees
        are equal in constant time complexity.
@@ -513,8 +551,9 @@ module Crypto
     \includegraphics[width=10cm, height=5cm]{blockchain}
 \end{frame}
 
-\begin{frame}
-  \frametitle{Transaction tree}
+% \begin{frame}
+%   \frametitle{Transaction tree}
+\AgdaHide{
 \begin{code}
 
       mutual
@@ -526,8 +565,10 @@ module Crypto
           genesisTree : TXTree zero zero [] zero zero
 
 \end{code}
-\end{frame}
-\begin{frame}
+}
+% \end{frame}
+% \begin{frame}
+\AgdaHide{
 \begin{code}
 
           txtree      :
@@ -548,9 +589,11 @@ module Crypto
               (incFees tx) (incQtTx tx proofLessQtTX)
 
 \end{code}
-\end{frame}
-\begin{frame}
-  \frametitle{Transaction}
+}
+% \end{frame}
+% \begin{frame}
+%   \frametitle{Transaction}
+\AgdaHide{
 \begin{code}
 
         data TX {time : Time} {block : BlockPosition}
@@ -568,8 +611,10 @@ module Crypto
             → TX tr outputs
 
 \end{code}
-\end{frame}
-\begin{frame}
+}
+% \end{frame}
+% \begin{frame}
+\AgdaHide{
 \begin{code}
 
           coinbase :
@@ -580,7 +625,8 @@ module Crypto
             → TX tr outputs
 
 \end{code}
-\end{frame}
+}
+% \end{frame}
 % \begin{frame}
 \AgdaHide{
 \begin{code}
@@ -821,8 +867,9 @@ module Crypto
 \includegraphics[width=11cm, height=8cm]{blockchain2}
 \end{frame}
 
-\begin{frame}
-  \frametitle{Block}
+% \begin{frame}
+%   \frametitle{Block}
+\AgdaHide{
 \begin{code}
 
       record Block
@@ -843,9 +890,11 @@ module Crypto
         : Set where
 
 \end{code}
-\end{frame}
-\begin{frame}
-  \frametitle{Block}
+}
+% \end{frame}
+% \begin{frame}
+%   \frametitle{Block}
+\AgdaHide{
 \begin{code}
 
         constructor blockc
@@ -855,7 +904,8 @@ module Crypto
           sndBlockCoinbase : coinbaseTree txTree₂
 
 \end{code}
-\end{frame}
+}
+% \end{frame}
 % \begin{frame}
 \AgdaHide{
 \begin{code}
@@ -887,8 +937,9 @@ module Crypto
 \end{code}
 }
 % \end{frame}
-\begin{frame}
-  \frametitle{Blockchain}
+% \begin{frame}
+%   \frametitle{Blockchain}
+\AgdaHide{
 \begin{code}
 
       data Blockchain :
@@ -910,9 +961,11 @@ module Crypto
         → Set where
 
 \end{code}
-\end{frame}
-\begin{frame}
-  \frametitle{Blockchain}
+}
+% \end{frame}
+% \begin{frame}
+%   \frametitle{Blockchain}
+\AgdaHide{
 \begin{code}
 
           fstBlock' :
@@ -934,9 +987,11 @@ module Crypto
             → Blockchain block
 
 \end{code}
-\end{frame}
-\begin{frame}
-  \frametitle{Blockchain}
+}
+% \end{frame}
+% \begin{frame}
+%   \frametitle{Blockchain}
+\AgdaHide{
 \begin{code}
 
           addBlock :
@@ -958,9 +1013,11 @@ module Crypto
             (blockchain : Blockchain block-p)
 
 \end{code}
-\end{frame}
-\begin{frame}
-  \frametitle{Blockchain}
+}
+% \end{frame}
+% \begin{frame}
+%   \frametitle{Blockchain}
+\AgdaHide{
 \begin{code}
 
             {outSize : ℕ}
@@ -984,7 +1041,8 @@ module Crypto
             → Blockchain block
 
 \end{code}
-\end{frame}
+}
+% \end{frame}
 % \begin{frame}
 \AgdaHide{
 \begin{code}
@@ -1322,6 +1380,8 @@ module Crypto
    \end{itemize}
 \end{frame}
 
+\section{Conclusion}
+
 \begin{frame}{Conclusions}
   \begin{itemize}
     \item In this work, all specifications were placed on types.
@@ -1351,11 +1411,11 @@ module Crypto
   \end{itemize}
 \end{frame}
 
-\section{Bibliography}
+% \section{Bibliography}
 
-\begin{frame}{Bibliographic references}
-  \bibliographystyle{apacite}
-  \bibliography{References}
-\end{frame}
+% \begin{frame}{Bibliographic references}
+%   \bibliographystyle{apacite}
+%   \bibliography{References}
+% \end{frame}
 
 \end{document}
