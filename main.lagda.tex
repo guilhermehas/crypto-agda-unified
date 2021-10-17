@@ -249,7 +249,7 @@ module Crypto
 
   record CryptoPostulates : Set₁ where
     field
-      _priv≡pub_        : PrivateKey → PublicKey → Set
+      priv→pub_         : PrivateKey → PublicKey
       publicKey2Address : PublicKey → Address
       Signed            : Msg → PublicKey → Signature → Set
       Signed?           : (msg : Msg) (pk : PublicKey)
