@@ -117,7 +117,7 @@
 
 \begin{frame}
    \frametitle{Definition}
-\begin{itemize}
+\begin{itemize}[<+->]
      \item A cryptocurrency is a decentralized mean of exchange that uses
        blockchain and cryptography to create new currency units and ensure the validity of transactions.
      \item Bitcoin is considered the world's first decentralized digital currency,
@@ -130,9 +130,9 @@
 
 \begin{frame}
    \frametitle{Ethical Aspects}
-\begin{itemize}
+\begin{itemize}[<+->]
   \item In Satoshi Nakamoto's vision, Bitcoin would be minerated by everyone.
-    But until today, there are just a few miners in places on Earth.
+    But until today, there are just a few miners on Earth.
   \item Mining spends a lot of energy because of the proof of work of Bitcoin.
     However, most of the energy to mine is green. It is usually geothermic energy that would not be used where it was produced.
   \item Other cryptocurrencies, such as Cardano, use Proof of Stake to solve this problem. In addition, mining rewards go to people who have a Proof of Stake cryptocurrency.
@@ -169,7 +169,7 @@ open import Utils
 
 \begin{frame}
   \frametitle{Hash Function}
-  \begin{itemize}
+  \begin{itemize}[<+->]
     \item A hash function serves to fingerprint large data into a number.
     \item It is assumed that two different files will always have different hashes (injectivity)
    since the probability of two different files having the same hash is negligible.
@@ -181,7 +181,7 @@ open import Utils
 
 \begin{frame}
   \frametitle{Cryptographic Functions}
-  \begin{itemize}
+  \begin{itemize}[<+->]
     \item In Bitcoin, there is a private and a public key.
     \item From the private key, it is possible to generate a public key
  and to sign a transaction.
@@ -272,7 +272,7 @@ module Crypto
 
 \begin{frame}
   \frametitle{Postulates}
-  \begin{itemize}
+  \begin{itemize}[<+->]
     \item Hash injective is impossible to proof.
       But we postulate it because the probability of hash collision is very low.
     \item In my master thesis, each function of crypto was postulated.
@@ -299,7 +299,7 @@ module Crypto
 
 \begin{frame}
    \frametitle{Transactions}
-   \begin{itemize}
+   \begin{itemize}[<+->]
      \item With a transaction, it is possible to send Bitcoins from one account to another.
      \item Transactions are like a paper check. The individual specifies an amount and signs the transaction.
      \item In Bitcoin, there are two kinds of transactions:
@@ -515,7 +515,7 @@ module Crypto
 
 \begin{frame}
    \frametitle{Unspent Transaction Model}
-   \begin{itemize}
+   \begin{itemize}[<+->]
      \item In the unspent transaction model, every transaction is added to the transaction tree.
      \item To find out the balance of an account it is necessary to look at all unspent transactions
        sent to that account.
@@ -531,7 +531,7 @@ module Crypto
 
 \begin{frame}
    \frametitle{Transaction Trees}
-   \begin{itemize}
+   \begin{itemize}[<+->]
      \item The idea of the transaction tree is to gather all transactions into a tree.
      \item In this way, it is possible to fingerprint the information of all transactions calculating just their hash.
      \item With the injectivity property of the hash, it is possible to verify that two trees are equal in constant time complexity.
@@ -836,7 +836,7 @@ module Crypto
 
 \begin{frame}
    \frametitle{Blocks and Blockchain}
-   \begin{itemize}
+   \begin{itemize}[<+->]
      \item Transactions are embedded in blocks where they are stored.
      \item In Bitcoin, there is a chain of blocks: the blockchain.
        The first block is called the genesis block and every 10 minutes, on average, a new block is added to this blockchain.
@@ -1360,7 +1360,7 @@ module Crypto
 
 \begin{frame}
    \frametitle{Mining}
-   \begin{itemize}
+   \begin{itemize}[<+->]
      \item Every block has a cryptographic problem to be solved. That is,
        you need to calculate a nonce value such that the block hash is less than a specified value.
      \item This specified value is calculated from the average of the last 2016 blocks (2 weeks)
@@ -1371,7 +1371,7 @@ module Crypto
 \section{Conclusion}
 
 \begin{frame}{Conclusions}
-  \begin{itemize}
+  \begin{itemize}[<+->]
     \item In this work, all specifications were placed on types.
     \item In other works, the approach may be different.
       That is, without any information on types and all proofs done separately.
@@ -1380,7 +1380,7 @@ module Crypto
 \end{frame}
 
 \begin{frame}{Missing Details}
-  \begin{itemize}
+  \begin{itemize}[<+->]
     \item Calculate block hash and block nounce field.
     \item Change protocol to receive entire block instead of individual transactions.
     \item Add if there is a blockchain larger than the server's size.
@@ -1388,7 +1388,7 @@ module Crypto
 \end{frame}
 
 \begin{frame}{More complex parts to add}
-  \begin{itemize}
+  \begin{itemize}[<+->]
     \item Formal modeling of the blockchain as a distributed system.
     \item Create client code to interact with nodes.
     \item Specify the protocol between client and node and between node to node.
