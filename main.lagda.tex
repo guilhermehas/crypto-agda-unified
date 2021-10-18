@@ -131,7 +131,7 @@
 \begin{frame}
    \frametitle{Ethical Aspects}
 \begin{itemize}[<+->]
-  \item In Satoshi Nakamoto's vision, Bitcoin would be minerated by everyone.
+  \item In Satoshi Nakamoto's vision, Bitcoin would be mined by everyone.
     But until today, there are just a few miners on Earth.
   \item Mining spends a lot of energy because of the proof of work of Bitcoin.
     However, most of the energy to mine is green. It is usually geothermic energy that would not be used where it was produced.
@@ -173,7 +173,7 @@ open import Utils
     \item A hash function serves to fingerprint large data into a number.
     \item It is assumed that two different files will always have different hashes (injectivity)
    since the probability of two different files having the same hash is negligible.
-    \item By the pigeon hole principle, the injectivity of the hash is impossible.
+    \item By the pigeonhole principle, the injectivity of the hash is impossible.
       However, two files that have the same hash were never found in SHA-256.
     \item It is also not possible to compute the inverse of the hash function.
   \end{itemize}
@@ -249,13 +249,12 @@ module Crypto
 
   record CryptoPostulates : Set₁ where
     field
-      priv→pub_         : PrivateKey → PublicKey
+      priv→pub          : PrivateKey → PublicKey
       publicKey2Address : PublicKey → Address
       Signed            : Msg → PublicKey → Signature → Set
-      Signed?           : (msg : Msg) (pk : PublicKey)
-        (sig : Signature) → Dec $ Signed msg pk sig
-      hashMsg : Msg → Hashed
-      hash-inj : ∀ m n
+      Signed?           : ∀ msg pk sig → Dec $ Signed msg pk sig
+      hashMsg           : Msg → Hashed
+      hash-inj          : ∀ m n
         → hashMsg m ≡ hashMsg n
         →         m ≡ n
 
@@ -509,7 +508,7 @@ module Crypto
       totalQt = suc totalQtSub1
 
       tQtTxs : Set
-      tQtTxs = Fin $ totalQt
+      tQtTxs = Fin totalQt
 \end{code}
 \end{frame}
 
