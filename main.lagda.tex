@@ -147,7 +147,7 @@ module main where
 
 open import Data.Nat
 open import Data.List
-open import Data.Unit hiding (_≤_; _≟_)
+open import Data.Unit using (⊤; tt)
 open import Data.Empty
 open import Data.Sum hiding (map)
 open import Data.Fin hiding (_+_; _≥_; _≤_; _-_; _≟_)
@@ -351,11 +351,6 @@ module Crypto
         → VectorOutput time (suc size)
           (amount + TXFieldWithId.amount tx)
 
--- \end{code}
--- \end{frame}
--- \begin{frame}
--- \begin{code}
-
     VectorOutput→List : ∀ {time : Time} {size : ℕ}
       {amount : Amount}
       (outs : VectorOutput time size amount)
@@ -363,11 +358,6 @@ module Crypto
     VectorOutput→List (fstEl tx sameId elStart) = tx ∷ []
     VectorOutput→List (cons outs tx sameId elStart) =
       tx ∷ VectorOutput→List outs
-
--- \end{code}
--- \end{frame}
--- \begin{frame}
--- \begin{code}
 
     TX→Msg : (tx : TXField) → Msg
     TX→Msg record { amount = amount ; address = address }
@@ -394,11 +384,6 @@ module Crypto
     txEls→Msg input [] (_ , ())
     txEls→Msg input (output ∷ outputs) _
       = txInput→Msg input (map removeId (output ∷ outputs)) tt
-
--- \end{code}
--- \end{frame}
--- \begin{frame}
--- \begin{code}
 
     txEls→MsgVecOut :
       {time      : Time}
@@ -546,22 +531,12 @@ module Crypto
 %   \frametitle{Transaction tree}
 \AgdaHide{
 \begin{code}
-
       mutual
         data TXTree : (time : Time) (block : BlockPosition)
           (outputs : List TXFieldWithId)
           (totalFees : Amount)
           (qtTransactions : tQtTxs) → Set where
-
           genesisTree : TXTree zero zero [] zero zero
-
-\end{code}
-}
-% \end{frame}
-% \begin{frame}
-\AgdaHide{
-\begin{code}
-
           txtree      :
             {block : BlockPosition} {time : Time}
             {outSize : ℕ} {amount : Amount}
@@ -579,14 +554,6 @@ module Crypto
               (inputsTX tx ++ VectorOutput→List outputTX)
               (incFees tx) (incQtTx tx proofLessQtTX)
 
-\end{code}
-}
-% \end{frame}
-% \begin{frame}
-%   \frametitle{Transaction}
-\AgdaHide{
-\begin{code}
-
         data TX {time : Time} {block : BlockPosition}
             {inputs : List TXFieldWithId} {outSize : ℕ}
             {outAmount : Amount} {totalFees : ℕ}
@@ -600,27 +567,12 @@ module Crypto
             (outputs : VectorOutput time outSize outAmount)
             (txSigned : TXSigned (sub→list SubInputs) outputs)
             → TX tr outputs
-
-\end{code}
-}
-% \end{frame}
-% \begin{frame}
-\AgdaHide{
-\begin{code}
-
           coinbase :
             (tr : TXTree time block inputs totalFees qtTransactions)
             (outputs : VectorOutput time outSize outAmount)
             (pAmountFee : outAmount out≡Fee totalFees
               +RewardBlock block)
             → TX tr outputs
-
-\end{code}
-}
-% \end{frame}
-% \begin{frame}
-\AgdaHide{
-\begin{code}
 
         isCoinbase : ∀ {block : BlockPosition} {time : Time}
           {inputs : List TXFieldWithId}
@@ -642,11 +594,6 @@ module Crypto
           (tx : TX {time} {block} {inputs} {outSize} tr outputs)
           → ℕ
 
--- \end{code}
--- \end{frame}
--- \begin{frame}
--- \begin{code}
-
         nextBlock (normalTX genesisTree _ _ _) = zero
         nextBlock {block} (normalTX (txtree _
           (normalTX _ _ _ _) _) _ _ _) = block
@@ -658,11 +605,6 @@ module Crypto
         nextBlock {block} (coinbase (txtree _
           (coinbase _ _ _) _) _ _) = suc block
 
--- \end{code}
--- \end{frame}
--- \begin{frame}
--- \begin{code}
-
         inputsTX : ∀ {block : BlockPosition} {time : Time}
           {inputs : List TXFieldWithId}
           {outSize : ℕ} {amount : Amount}
@@ -673,11 +615,6 @@ module Crypto
           → List TXFieldWithId
         inputsTX (normalTX _ SubInputs _ _) = list-sub SubInputs
         inputsTX {_} {_} {inputs} (coinbase _ _ _) = inputs
-
--- \end{code}
--- \end{frame}
--- \begin{frame}
--- \begin{code}
 
         postulate
           incQtTx : ∀ {qtTransactions : tQtTxs}
@@ -694,11 +631,6 @@ module Crypto
                 (isCoinbase tx))
             → tQtTxs
 
--- \end{code}
--- \end{frame}
--- \begin{frame}
--- \begin{code}
-
         incFees : ∀ {block : BlockPosition} {time : Time}
           {inputs : List TXFieldWithId}
           {outSize : ℕ} {amount : Amount}
@@ -714,22 +646,11 @@ module Crypto
           + totalFees
         incFees (coinbase tr outputs _) = zero
 
--- \end{code}
--- \end{frame}
--- \begin{frame}
--- \begin{code}
-
         _out≡Fee_+RewardBlock_ : (amount : Amount)
           (totalFees : Amount)
           (block : BlockPosition) → Set
         amount out≡Fee totalFees +RewardBlock block =
           amount ≡ totalFees + blockReward block
-
--- \end{code}
--- \end{frame}
--- \begin{frame}
--- \begin{code}
-
 
       data nextTXTree :
         {block₁ : BlockPosition}
@@ -749,11 +670,6 @@ module Crypto
           totalFees₂ qtTransactions₂)
         → Set where
 
--- \end{code}
--- \end{frame}
--- \begin{frame}
--- \begin{code}
-
         firstTX : ∀ {block time outputs totalFees qtTransactions}
           (txTree : TXTree time block outputs totalFees qtTransactions)
           → nextTXTree txTree txTree
@@ -766,12 +682,6 @@ module Crypto
             outputs₂ totalFees₂ qtTransactions₂}
 
           (nxTree : nextTXTree txTree₁ txTree₂)
-
--- \end{code}
--- \end{frame}
--- \begin{frame}
--- \begin{code}
-
           {outSize amount}
           {outputTX : VectorOutput time₂ outSize amount}
           (tx : TX txTree₂ outputTX)
@@ -781,10 +691,6 @@ module Crypto
               (isCoinbase tx))
           → nextTXTree txTree₁ (txtree txTree₂ tx proofLessQtTX)
 
--- \end{code}
--- \end{frame}
--- \begin{frame}
--- \begin{code}
 
       firstTreesInBlock : ∀
         {block time outputs totalFees qtTransactions}
@@ -797,10 +703,6 @@ module Crypto
       firstTreesInBlock (txtree (txtree _
         (coinbase _ _ _) _) _ _) = ⊤
 
--- \end{code}
--- \end{frame}
--- \begin{frame}
--- \begin{code}
 
       isFirstTreeInBlock : ∀
         {block time outputs totalFees qtTransactions}
@@ -815,11 +717,6 @@ module Crypto
         (normalTX _ _ _ _) _) _ _) = no λ x → x
       isFirstTreeInBlock (txtree (txtree _
         (coinbase _ _ _) _) _ _) = yes tt
-
--- \end{code}
--- \end{frame}
--- \begin{frame}
--- \begin{code}
 
       coinbaseTree : ∀
         {block time outputs totalFees qtTransactions}

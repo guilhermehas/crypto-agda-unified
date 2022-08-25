@@ -1,32 +1,36 @@
 {
   description = "Crypto Agda slides";
 
-  inputs = {
-    flake-utils.url = github:numtide/flake-utils;
-    nixos-21.url = github:NixOS/nixpkgs/nixos-21.05;
-  };
+  inputs.flake-utils.url = github:numtide/flake-utils;
 
-  outputs = { self, flake-utils, nixos-21, nixpkgs }:
+  outputs = { self, flake-utils, nixpkgs }:
     flake-utils.lib.eachDefaultSystem (system:
     let pkgs = import nixpkgs { inherit system; };
-        pkgs-21 = import nixos-21 { inherit system; };
+        inherit (nixpkgs.lib) cleanSourceWith hasSuffix;
         agda-p = pkgs.agda.withPackages (p: with p; [ standard-library ]);
-        latex = with pkgs-21; texlive.combine {
+        latex = with pkgs; texlive.combine {
           inherit (texlive)
             scheme-full
           ;
         };
         name = "slides";
     in rec {
-      packages.${name} = with pkgs;
-        stdenv.mkDerivation {
-            name = name;
-            src = ./.;
-            buildInputs = [
-              agda-p
-              latex
-            ];
-          };
-      defaultPackage = packages.${name};
+      packages = rec {
+        slides = with pkgs;
+          stdenv.mkDerivation {
+              name = name;
+              src = cleanSourceWith {
+                filter = name: type:
+                  !(hasSuffix ".nix" name)
+                ;
+                src = ./.;
+              };
+              buildInputs = [
+                agda-p
+                latex
+              ];
+            };
+        default = slides;
+      };
     });
 }
