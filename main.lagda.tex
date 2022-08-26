@@ -77,6 +77,7 @@
 \newunicodechar{≥}{$\geqslant$}
 \newunicodechar{≟}{$\doteq$}
 \newunicodechar{∈}{$\in$}
+\newunicodechar{↣}{$\rightarrowtail$}
 % \newunicodechar{}{$$}
 
 
@@ -157,7 +158,6 @@ open import Function renaming (Injective to InjectiveSetoid)
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 open import Utils
-
 \end{code}
 \end{frame}
 
@@ -271,6 +271,30 @@ module Hashableℕ (hashFunctionℕ@(hashℕ , _) : HashFunctionℕ) where
 \begin{frame}
   \frametitle{Postulates}
   \begin{code}
+  record WithCryptoPostulates (cryptoSets : CriptoSets)
+    : Set₁ where
+    open CriptoSets cryptoSets public
+    field
+      priv→pub          : PrivateKey → PublicKey
+      Signed            : ⦃ Hashable MSG ⦄ → MSG
+                          → PublicKey → Signature → Set
+      Signed?           : ∀ ⦃ _ : Hashable MSG ⦄ (msg : MSG) pk sig
+                          → Dec $ Signed msg pk sig
+  \end{code}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Postulates}
+  \begin{code}
+  record CryptoPostulates : Set₁ where
+    field
+      cryptoSets : CriptoSets
+      cryptoAxioms : WithCryptoPostulates cryptoSets
+    open WithCryptoPostulates cryptoAxioms public
+
+CryptoPostulatesWithHash : Set₁
+CryptoPostulatesWithHash = Σ[ hashℕ ∈ _ ]
+  Hashableℕ.CryptoPostulates hashℕ
   \end{code}
 \end{frame}
 
@@ -279,23 +303,20 @@ module Hashableℕ (hashFunctionℕ@(hashℕ , _) : HashFunctionℕ) where
 \begin{frame}
   \frametitle{Message Signed}
 \begin{code}
+module _ (cPostulates@(hashℕ , cPosts)
+           : CryptoPostulatesWithHash) where
 
-  record WithCryptoPostulates (cryptoSets : CriptoSets) : Set₁ where
-    open CriptoSets cryptoSets public
-    field
-      priv→pub          : PrivateKey → PublicKey
-      Signed            : ⦃ Hashable MSG ⦄ → MSG → PublicKey → Signature → Set
-      Signed?           : ∀ ⦃ _ : Hashable MSG ⦄ (msg : MSG) pk sig
-                          → Dec $ Signed msg pk sig
+  open Hashableℕ hashℕ
+  open CryptoPostulates cPosts
 
-  record CryptoPostulates : Set₁ where
-    field
-      cryptoSets : CriptoSets
-      cryptoAxioms : WithCryptoPostulates cryptoSets
-    open WithCryptoPostulates cryptoAxioms public
+  module _ ⦃ _ : Hashable MSG ⦄ where
 
-CryptoPostulatesWithHash : Set₁
-CryptoPostulatesWithHash = Σ[ hashℕ ∈ _ ] Hashableℕ.CryptoPostulates hashℕ
+    record SignedWithSigPbk  (msg : MSG)
+      (publicKey : PublicKey) : Set where
+      field
+        signature : Signature
+        signed    : Signed msg publicKey signature
+
 \end{code}
 \end{frame}
 
@@ -315,18 +336,6 @@ CryptoPostulatesWithHash = Σ[ hashℕ ∈ _ ] Hashableℕ.CryptoPostulates hash
 
 \begin{frame}
 \begin{code}
-
-module _ (cPostulates@(hashℕ , cPosts) : CryptoPostulatesWithHash) where
-  open Hashableℕ hashℕ
-  open CryptoPostulates cPosts
-
-  module _ ⦃ _ : Hashable MSG ⦄ where
-
-    record SignedWithSigPbk  (msg : MSG) (publicKey : PublicKey) : Set where
-      field
-        signature : Signature
-        signed    : Signed msg publicKey signature
-
   record Transaction : Set where
     field
       publicKeyInput : PublicKey
@@ -372,7 +381,9 @@ module _ (cPostulates@(hashℕ , cPosts) : CryptoPostulatesWithHash) where
 
 \AgdaHide{
 \begin{code}
-
+record UTXO : Set where
+  field
+    numberTransaction : ℕ
 
 
 \end{code}
