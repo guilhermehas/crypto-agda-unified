@@ -203,119 +203,6 @@ private variable
 
 \begin{frame}
   \frametitle{Hashable}
-
-
-\end{frame}
-
-
-\begin{frame}
-  \frametitle{Crypto Constants}
-\begin{code}
-
-\end{code}
-\AgdaHide{
-\begin{code}
-    -- open CryptoPostulates crypto-postulates
-\end{code}
-}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Postulates}
-  \begin{itemize}[<+->]
-    \item Hash injective is impossible to proof.
-      But we postulate it because the probability of hash collision is very low.
-    \item In my master thesis, each function of crypto was postulated.
-      However, it is better to put these functions as variables.
-      Therefore, the code can be more general for every crypto function that has these properties.
-  \end{itemize}
-\end{frame}
-
-\section{Transactions}
-
-\begin{frame}
-  \frametitle{Message Signed}
-\begin{code}
-    -- record SignedWithSigPbk (msg : Msg)(address : Address)
-    --   : Set where
-    --   field
-    --     publicKey   :  PublicKey
-    --     pbkCorrect  :  publicKey2Address publicKey ≡ address
-    --     signature   :  Signature
-    --     signed      :  Signed msg publicKey signature
-
-\end{code}
-\end{frame}
-
-\begin{frame}
-   \frametitle{Transactions}
-   \begin{itemize}[<+->]
-     \item With a transaction, it is possible to send Bitcoins from one account to another.
-     \item Transactions are like a paper check. The individual specifies an amount and signs the transaction.
-     \item In Bitcoin, there are two kinds of transactions:
-       the coinbase transactions and the normal transaction.
-       There is just one coinbase transaction per block and it has only outputs,
-       while the normal transaction has inputs and outputs.
-       The inputs of a transaction should be outputs of other transactions that have never been used as input of one transaction.
-    \item Furthermore, each transaction must have a signature generated from the private key proving that the public key user agreed to make that transaction.
-   \end{itemize}
-\end{frame}
-
-\begin{frame}
-\begin{code}
-
-    -- record TXField : Set where
-    --   constructor txfield
-    --   field
-    --     amount  : Amount
-    --     address : Address
-
-    -- record TXFieldWithId : Set where
-    --   constructor txfieldid
-    --   field
-    --     time     : Time
-    --     position : ℕ
-    --     txField  : TXField
-    --   open TXField txField public
-\end{code}
-\end{frame}
-
-\begin{frame}
-\begin{code}
-
-    -- record TXSigned'
-    --   {time} {outSize} {outAmount}
-    --   (inputs    : NonEmptyList TXFieldWithId)
-    --   (outputs   : VectorOutput time outSize outAmount)
-    --     : Set where
-    --   constructor txsig
-    --   field
-    --     signed   : All'[ input ∈ inputs ]
-    --       (SignedWithSigPbk' input outputs)
-    --     in≥out : totalSpent inputs ≥ outAmount
-
-\end{code}
-\end{frame}
-
-\section{Blockchain}
-
-\begin{frame}
-  \frametitle{Blockchain constants}
-\begin{code}
-    -- module WithConstants
-    --   (totalQtSub1 : ℕ)
-    --   (blockReward : BlockPosition → Amount)
-    --   where
-
-    --   totalQt : ℕ
-    --   totalQt = suc totalQtSub1
-
-    --   tQtTxs : Set
-    --   tQtTxs = Fin totalQt
-\end{code}
-\end{frame}
-
-\AgdaHide{
 \begin{code}
 Hashable : Set ℓ → Set ℓ
 Hashable A = A ↣ ℕ
@@ -343,8 +230,15 @@ module Hashableℕ (hashFunctionℕ@(hashℕ , _) : HashFunctionℕ) where
 
   hashBoth : ⦃ Hashable A ⦄ → ⦃ Hashable B ⦄ → A → B → ℕ
   hashBoth ⦃ hashA ⦄ ⦃ hashB ⦄ a b = hash (hash a + hash b)
+\end{code}
 
 
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Crypto Constants}
+\begin{code}
   record CriptoSets : Set₁ where
     field
       PrivateKey         : Set
@@ -359,6 +253,32 @@ module Hashableℕ (hashFunctionℕ@(hashℕ , _) : HashFunctionℕ) where
 
     address : PublicKey → Address
     address = hash
+\end{code}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Postulates}
+  \begin{itemize}[<+->]
+    \item Hash injective is impossible to proof.
+      But we postulate it because the probability of hash collision is very low.
+    \item In my master thesis, each function of crypto was postulated.
+      However, it is better to put these functions as variables.
+      Therefore, the code can be more general for every crypto function that has these properties.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Postulates}
+  \begin{code}
+  \end{code}
+\end{frame}
+
+\section{Transactions}
+
+\begin{frame}
+  \frametitle{Message Signed}
+\begin{code}
 
   record WithCryptoPostulates (cryptoSets : CriptoSets) : Set₁ where
     open CriptoSets cryptoSets public
@@ -376,6 +296,25 @@ module Hashableℕ (hashFunctionℕ@(hashℕ , _) : HashFunctionℕ) where
 
 CryptoPostulatesWithHash : Set₁
 CryptoPostulatesWithHash = Σ[ hashℕ ∈ _ ] Hashableℕ.CryptoPostulates hashℕ
+\end{code}
+\end{frame}
+
+\begin{frame}
+   \frametitle{Transactions}
+   \begin{itemize}[<+->]
+     \item With a transaction, it is possible to send Bitcoins from one account to another.
+     \item Transactions are like a paper check. The individual specifies an amount and signs the transaction.
+     \item In Bitcoin, there are two kinds of transactions:
+       the coinbase transactions and the normal transaction.
+       There is just one coinbase transaction per block and it has only outputs,
+       while the normal transaction has inputs and outputs.
+       The inputs of a transaction should be outputs of other transactions that have never been used as input of one transaction.
+    \item Furthermore, each transaction must have a signature generated from the private key proving that the public key user agreed to make that transaction.
+   \end{itemize}
+\end{frame}
+
+\begin{frame}
+\begin{code}
 
 module _ (cPostulates@(hashℕ , cPosts) : CryptoPostulatesWithHash) where
   open Hashableℕ hashℕ
@@ -394,6 +333,12 @@ module _ (cPostulates@(hashℕ , cPosts) : CryptoPostulatesWithHash) where
       addressOutput  : Address
       amount         : ℕ
 
+\end{code}
+\end{frame}
+
+\begin{frame}
+\begin{code}
+
   module _ ⦃ _ : Hashable Transaction ⦄ where
 
     record SignedTransaction  : Set where
@@ -403,6 +348,33 @@ module _ (cPostulates@(hashℕ , cPosts) : CryptoPostulatesWithHash) where
 
       field
         signed : SignedWithSigPbk transaction publicKeyInput
+
+\end{code}
+\end{frame}
+
+\section{Blockchain}
+
+\begin{frame}
+  \frametitle{Blockchain constants}
+\begin{code}
+    -- module WithConstants
+    --   (totalQtSub1 : ℕ)
+    --   (blockReward : BlockPosition → Amount)
+    --   where
+
+    --   totalQt : ℕ
+    --   totalQt = suc totalQtSub1
+
+    --   tQtTxs : Set
+    --   tQtTxs = Fin totalQt
+\end{code}
+\end{frame}
+
+\AgdaHide{
+\begin{code}
+
+
+
 \end{code}
 }
 
