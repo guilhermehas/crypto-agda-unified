@@ -5,9 +5,13 @@
 
   outputs = { self, flake-utils, nixpkgs }:
     flake-utils.lib.eachDefaultSystem (system:
-    let pkgs = import nixpkgs { inherit system; };
+    let
+        agda-overlay = import ./agda-overlay.nix;
+        overlays = [ agda-overlay ];
+        pkgs = import nixpkgs { inherit system overlays; };
+        inherit (pkgs) agdaPackagesNew;
         inherit (nixpkgs.lib) cleanSourceWith hasSuffix;
-        agda-p = pkgs.agda.withPackages (p: with p; [ standard-library ]);
+        agda-p = pkgs.agda.withPackages (with agdaPackagesNew; [ standard-library ]);
         latex = with pkgs; texlive.combine {
           inherit (texlive)
             scheme-full
