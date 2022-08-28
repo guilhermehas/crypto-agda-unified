@@ -262,6 +262,7 @@ module Hashableℕ
   \begin{itemize}[<+->]
     \item Hash injective is impossible to proof.
       But we postulate it because the probability of hash collision is very low.
+    %% hash should be Fin n
     \item In my master thesis, each function of crypto was postulated.
       However, it is better to put these functions as variables.
       Therefore, the code can be more general for every crypto function that has these properties.
@@ -336,7 +337,11 @@ module _ (cPostulates@(hashℕ , cPosts)
       publicKeyInput : PublicKey
       addressOutput  : Address
       amount         : ℕ
+
     addressInput = address publicKeyInput
+
+    field
+      addressInput≢Output : addressInput ≢ addressOutput
 
 \end{code}
 \end{frame}
@@ -396,11 +401,11 @@ module _ (cPostulates@(hashℕ , cPosts)
   ledgerAddTransaction ledger transaction
     {validTrans} addressLedger =
 
-    if addressInput ≡ᵇ addressLedger
-    then
+    if addressLedger ≡ᵇ addressInput then
       ledger addressInput - amount [ ≤ᵇ⇒≤ _ _ validTrans ]
-    else
-      ledger addressInput
+    else if addressLedger ≡ᵇ addressOutput then
+      ledger addressInput + amount
+    else ledger addressInput
 
     where open Transaction transaction
 
