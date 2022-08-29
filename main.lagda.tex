@@ -124,7 +124,7 @@
 \begin{itemize}[<+->]
      \item A cryptocurrency is a decentralized mean of exchange that uses
        blockchain and cryptography to create new currency units and ensure the validity of transactions.
-     \item In this project, I will define cryptographic functions, transactions, block and blockchain.
+     \item In this presentation, I will define cryptographic functions, transactions, and ledger.
      \item Distributed system aspects are outside of the scope of this work.
      \end{itemize}
 \end{frame}
@@ -223,20 +223,11 @@ instance
 }
 
 \begin{code}
-isHashFunctionℕ : (f : ℕ → ℕ) → Set
-isHashFunctionℕ f = Injective f
+hash : ⦃ Hashable A ⦄ → A → ℕ
+hash ⦃ hashA ⦄ = to hashA
 
-HashFunctionℕ : Set
-HashFunctionℕ = Σ[ f ∈ (ℕ → ℕ) ] isHashFunctionℕ f
-
-module Hashableℕ
-  (hashFunctionℕ@(hashℕ , _) : HashFunctionℕ) where
-
-  hash : ⦃ Hashable A ⦄ → A → ℕ
-  hash ⦃ hashA ⦄ = to hashA
-
-  hashBoth : ⦃ Hashable A ⦄ → ⦃ Hashable B ⦄ → A → B → ℕ
-  hashBoth ⦃ hashA ⦄ ⦃ hashB ⦄ a b = hash (hash a + hash b)
+hashBoth : ⦃ Hashable A ⦄ → ⦃ Hashable B ⦄ → A → B → ℕ
+hashBoth ⦃ hashA ⦄ ⦃ hashB ⦄ a b = hash (hash a + hash b)
 \end{code}
 
 
@@ -246,21 +237,21 @@ module Hashableℕ
 \begin{frame}
   \frametitle{Crypto Constants}
 \begin{code}
-  record CriptoSets : Set₁ where
-    field
-      PrivateKey         : Set
-      PublicKey          : Set
-      hashablePublicKey  : Hashable PublicKey
-      Signature          : Set
+record CriptoSets : Set₁ where
+  field
+    PrivateKey         : Set
+    PublicKey          : Set
+    hashablePublicKey  : Hashable PublicKey
+    Signature          : Set
 
-    instance
-      _ = hashablePublicKey
+  instance
+    _ = hashablePublicKey
 
-    Address = ℕ
-    Amount  = ℕ
+  Address = ℕ
+  Amount  = ℕ
 
-    address : PublicKey → Address
-    address = hash
+  address : PublicKey → Address
+  address = hash
 \end{code}
 
 \end{frame}
@@ -279,32 +270,29 @@ module Hashableℕ
 
 \begin{frame}
   \frametitle{Postulates}
-  \begin{code}
-  record WithCryptoPostulates (cryptoSets : CriptoSets)
-    : Set₁ where
-    open CriptoSets cryptoSets public
-    field
-      priv→pub : PrivateKey → PublicKey
-      Signed   : ⦃ Hashable MSG ⦄ → MSG
-                 → PublicKey → Signature → Set
-      Signed?  : ∀ ⦃ _ : Hashable MSG ⦄ (msg : MSG) pk sig
-                 → Dec $ Signed msg pk sig
-  \end{code}
+\begin{code}
+record WithCryptoPostulates (cryptoSets : CriptoSets)
+  : Set₁ where
+  open CriptoSets cryptoSets public
+  field
+    priv→pub : PrivateKey → PublicKey
+    Signed   : ⦃ Hashable MSG ⦄ → MSG
+                → PublicKey → Signature → Set
+    Signed?  : ∀ ⦃ _ : Hashable MSG ⦄ (msg : MSG) pk sig
+                → Dec $ Signed msg pk sig
+\end{code}
 \end{frame}
 
 \begin{frame}
   \frametitle{Postulates}
-  \begin{code}
-  record CryptoPostulates : Set₁ where
-    field
-      cryptoSets : CriptoSets
-      cryptoAxioms : WithCryptoPostulates cryptoSets
-    open WithCryptoPostulates cryptoAxioms public
+\begin{code}
+record CryptoPostulates : Set₁ where
+  field
+    cryptoSets : CriptoSets
+    cryptoAxioms : WithCryptoPostulates cryptoSets
+  open WithCryptoPostulates cryptoAxioms public
 
-CryptoPostulatesWithHash : Set₁
-CryptoPostulatesWithHash = Σ[ hashℕ ∈ _ ]
-  Hashableℕ.CryptoPostulates hashℕ
-  \end{code}
+\end{code}
 \end{frame}
 
 \section{Transactions}
@@ -312,11 +300,9 @@ CryptoPostulatesWithHash = Σ[ hashℕ ∈ _ ]
 \begin{frame}
   \frametitle{Message Signed}
 \begin{code}
-module _ (cPostulates@(hashℕ , cPosts)
-           : CryptoPostulatesWithHash) where
+module _ (cPostulates : CryptoPostulates) where
 
-  open Hashableℕ hashℕ
-  open CryptoPostulates cPosts
+  open CryptoPostulates cPostulates
 
   module _ ⦃ _ : Hashable MSG ⦄ where
 
@@ -377,8 +363,7 @@ module _ (cPostulates@(hashℕ , cPosts)
      \item Ledger is necessary to know how much currency each address has.
      \item In this work, ledger is a vector and each position corresponds how much money each address has.
      \item The total amount of the ledger is in the type. It is good to avoid bugs of money loosing.
-     \item To do a transfer of money, I made a visualization of the ledger.
-       So it is good to visualize better the problem.
+     \item To do a transfer of money, I made a visualization of the ledger to see better the problem.
    \end{itemize}
 \end{frame}
 
@@ -397,7 +382,7 @@ private variable
 record Ledger (size : ℕ) (totalAmount : ℕ) : Set where
   constructor ledgerC
   field
-    vecLedger : Vec ℕ size
+    vecLedger       : Vec ℕ size
     sum≡totalAmount : sum vecLedger ≡ totalAmount
 \end{code}
 \end{frame}
@@ -435,7 +420,7 @@ record LederViewWithAmount (size : ℕ) (totalAmount : ℕ)
   open Ledger ledger
 
   field
-    vP-amount : ℕ
+    vP-amount           : ℕ
     vP-amount+amount≡vP : vP-amount + amount ≡ vP
 \end{code}
 \end{frame}
