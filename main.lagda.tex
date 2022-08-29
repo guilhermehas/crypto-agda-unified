@@ -375,10 +375,10 @@ module _ (cPostulates@(hashℕ , cPosts)
   \frametitle{Ledger}
    \begin{itemize}[<+->]
      \item Ledger is necessary to know how much currency each address has.
-     \item In this work, it is necessary to validate if the address has enough money
-       to do a transaction to another address.
-    \item Using dependent types, it is necessary to prove that when doing a subtraction x - y,
-      that x is greather or equal than y.
+     \item In this work, ledger is a vector and each position corresponds how much money each address has.
+     \item The total amount of the ledger is in the type. It is good to avoid bugs of money loosing.
+     \item To do a transfer of money, I made a visualization of the ledger.
+       So it is good to visualize better the problem.
    \end{itemize}
 \end{frame}
 
@@ -505,7 +505,9 @@ transferFunds {totalAmount = totalAmount} {p} {q}
     \item In this work, most of the specifications were placed on types.
     \item In other works, the approach may be different.
       That is, types have little information and all proofs done separately.
+      For example, in ledger, the sum of currency is in another field.
     \item This approach was not chosen as it is much simpler to understand the code when types are more expressive.
+      In addition, proving thereoms is easier using this technic.
   \end{itemize}
 \end{frame}
 
