@@ -80,15 +80,21 @@ makeLedgerWithAmount vecLedger _ _ sum≡totalAmount vP-amount+amount≡vP vP≡
   ledgerViewAmount (ledgerViewC (ledgerC vecLedger sum≡totalAmount) _ _ vP≡loopkup vQ≡loopkup)
   _ vP-amount+amount≡vP
 
+pattern ledgerCons vecLedger sum≡totalAmount vP vQ vP≡loopkup
+  vQ≡loopkup vP-amount vP-amount+amount≡vP
+  = (ledgerViewAmount (ledgerViewC
+    (ledgerC vecLedger sum≡totalAmount)
+    vP vQ vP≡loopkup vQ≡loopkup) vP-amount vP-amount+amount≡vP)
+
 transferFunds :
     LederViewWithAmount size totalAmount p q p≢q amount
   → LederViewWithAmount size totalAmount q p (sym≢ p≢q) amount
 transferFunds {totalAmount = totalAmount} {p} {q} {p≢q} {amount}
-  (ledgerViewAmount
-    (ledgerViewC (ledgerC vecLedger sum≡totalAmount) vP vQ vP≡loopkup vQ≡loopkup)
-        vP-amount vP-amount+amount≡vP) =
+  (ledgerCons vecLedger sum≡totalAmount vP vQ vP≡loopkup
+    vQ≡loopkup vP-amount vP-amount+amount≡vP) =
+
     makeLedgerWithAmount (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) vQ+amount vP-amount
-    sum≡ refl (lookup∘update q _ _) (trans (lookup∘update′ p≢q _ _) (lookup∘update p _ _))
+    sum≡ refl lookupQ≡ lookupP≡
 
   where
 
@@ -108,6 +114,11 @@ transferFunds {totalAmount = totalAmount} {p} {q} {p≢q} {amount}
     lookup vecLedger q ≡˘⟨ lookup∘update′ (sym≢ p≢q) _ _ ⟩
     lookup (vecLedger [ p ]≔ vP-amount) q ∎
 
+  lookupP≡ : lookup (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) p ≡ vP-amount
+  lookupP≡ = trans (lookup∘update′ p≢q _ _) (lookup∘update p _ _)
+
+  lookupQ≡ : lookup (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) q ≡ vQ+amount
+  lookupQ≡ = lookup∘update q _ _
 
   sum≡' : sum (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) + vQ + vP ≡ totalAmount + vQ + vP
   sum≡' = begin
