@@ -1,6 +1,7 @@
 open import Level using (Level)
 open import Data.Product
-open import Data.Nat
+open import Data.Bool
+open import Data.Nat as ℕ
 open import Data.Nat.Properties
 open import Data.Nat.Solver
 open import Data.Fin hiding (_+_)
@@ -14,7 +15,9 @@ private
   variable
     ℓ : Level
     A : Set ℓ
-    n : ℕ
+    size amount totalAmount n : ℕ
+    p q : Fin n
+    p≢q : p ≢ q
 
 
 record Ledger (size : ℕ) (totalAmount : ℕ) : Set where
@@ -65,15 +68,27 @@ sum≔≡ (x ∷ xs) (suc p) y = begin
   x + (sum xs + y)                      ≡˘⟨ +-assoc x _ y ⟩
   x + sum xs + y ∎
 
-transferFunds : ∀ {size totalAmount p q p≢q amount}
+makeLedgerWithAmount :
+  (vecLedger : Vec ℕ size) (vP : ℕ) (vQ : ℕ) {vP-amount : ℕ}
+  (sum≡totalAmount : sum vecLedger ≡ totalAmount)
+  (vP-amount+amount≡vP : vP-amount + amount ≡ vP)
+  (vP≡loopkup : lookup vecLedger p ≡ vP)
+  (vQ≡loopkup : lookup vecLedger q ≡ vQ)
+  {p≢q : p ≢ q}
   → LederViewWithAmount size totalAmount p q p≢q amount
+makeLedgerWithAmount vecLedger _ _ sum≡totalAmount vP-amount+amount≡vP vP≡loopkup vQ≡loopkup =
+  ledgerViewAmount (ledgerViewC (ledgerC vecLedger sum≡totalAmount) _ _ vP≡loopkup vQ≡loopkup)
+  _ vP-amount+amount≡vP
+
+transferFunds :
+    LederViewWithAmount size totalAmount p q p≢q amount
   → LederViewWithAmount size totalAmount q p (sym≢ p≢q) amount
-transferFunds {totalAmount = totalAmount} {p} {q} {p≢q} {amount} (ledgerViewAmount
-  (ledgerViewC (ledgerC vecLedger sum≡totalAmount) vP vQ vP≡loopkup vQ≡loopkup)
-  vP-amount vP-amount+amount≡vP) = ledgerViewAmount (ledgerViewC
-    (ledgerC (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) sum≡)
-    (vQ + amount) vP-amount (lookup∘update q _ _) (trans (lookup∘update′ p≢q _ _) (lookup∘update p _ _)))
-    vQ refl
+transferFunds {totalAmount = totalAmount} {p} {q} {p≢q} {amount}
+  (ledgerViewAmount
+    (ledgerViewC (ledgerC vecLedger sum≡totalAmount) vP vQ vP≡loopkup vQ≡loopkup)
+        vP-amount vP-amount+amount≡vP) =
+    makeLedgerWithAmount (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) vQ+amount vP-amount
+    sum≡ refl (lookup∘update q _ _) (trans (lookup∘update′ p≢q _ _) (lookup∘update p _ _))
 
   where
 
@@ -108,3 +123,21 @@ transferFunds {totalAmount = totalAmount} {p} {q} {p≢q} {amount} (ledgerViewAm
 
   sum≡ : sum (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) ≡ totalAmount
   sum≡ = +-cancelʳ-≡ _ _ (+-cancelʳ-≡ _ _ sum≡')
+
+LedgerWithAmount : (p : Fin size) (amount : ℕ) (ledger : Ledger size totalAmount) → Set
+LedgerWithAmount p amount (ledgerC vecLedger _) = amount ℕ.≤ lookup vecLedger p
+
+LedgerViewWithAmount : (amount : ℕ) (ledger : LedgerView size totalAmount p q p≢q) → Set
+LedgerViewWithAmount {p = p} amount (ledgerViewC ledger _ _ _ _) = LedgerWithAmount p amount ledger
+
+ledger→ledgerView : (p q : Fin size) (p≢q : p ≢ q) (ledger : Ledger size totalAmount)
+  → LedgerView size totalAmount p q p≢q
+ledger→ledgerView p q p≢q ledger = ledgerViewC ledger _ _ refl refl
+
+ledgerView→ledgerViewAmount : (amount : ℕ) (ledger : LedgerView size totalAmount p q p≢q)
+  (withAmount : LedgerViewWithAmount amount ledger) → LederViewWithAmount size totalAmount p q p≢q amount
+ledgerView→ledgerViewAmount amount ledgerView@(ledgerViewC
+  (ledgerC vecLedger sum≡totalAmount)
+  vP vQ vP≡loopkup vQ≡loopkup) amount≤lookupP  =
+  ledgerViewAmount ledgerView (vP ∸ amount) (m∸n+n≡m {n = amount}
+  (subst (amount ℕ.≤_) vP≡loopkup amount≤lookupP))
