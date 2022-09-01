@@ -364,7 +364,7 @@ module _ (cPostulates : CryptoPostulates) where
    \begin{itemize}[<+->]
      \item Ledger requires to know how much currency each address has.
      \item In this work, the ledger is a vector and each position corresponds to how much money each address has.
-     \item The total amount of the ledger is in the type. This is good to avoid bugs of money losing.
+     \item The total amount of the ledger is in the type. This is good to avoid some bugs of losing money.
      \item It is easier to understand a transfer of money using a visualization.
    \end{itemize}
 \end{frame}
@@ -515,6 +515,7 @@ transferFunds {totalAmount = totalAmount} {p} {q}
   \vspace*{36 pt}
   \begin{center}
   {\Huge Thank you for your attention!}
+  {\Huge \newline}
   {\Huge Questions?}
   \end{center}
 \end{frame}
