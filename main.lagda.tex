@@ -19,6 +19,7 @@
 \usepackage{graphicx}
 
 \usepackage[autostyle=true,french=guillemets,maxlevel=3]{csquotes}
+\RequirePackage{etex}
 
 \graphicspath{ {images/} }
 
@@ -114,7 +115,7 @@
 \begin{frame}
 \frametitle{Goal}
 \begin{itemize}
-  \item Using Agda's dependent types to create a formal definition of a cryptocurrency similar to Bitcoin and Ethereum.
+  \item The goal is to use Agda's dependent types to create a formal definition of a cryptocurrency similar to Bitcoin and Ethereum.
     \includegraphics[width=8cm, height=5cm]{bitcoin-ethereum}
 \end{itemize}
 \end{frame}
@@ -122,10 +123,9 @@
 \begin{frame}
    \frametitle{Definition}
 \begin{itemize}[<+->]
-     \item A cryptocurrency is a decentralized means of exchange that uses
+     \item A cryptocurrency is a decentralized way of exchange that uses
        blockchain and cryptography to create new currency units and ensure the validity of transactions.
      \item In this presentation, I will define cryptographic functions, transactions, and ledger.
-     \item Distributed system aspects are outside of the scope of this work.
      \end{itemize}
 \end{frame}
 
@@ -260,11 +260,11 @@ record CriptoSets : Set₁ where
   \frametitle{Postulates}
   \begin{itemize}[<+->]
     \item Hash injective is impossible to prove.
-      But we postulate it because the probability of hash collision is very low.
+      But we postulate it as the probability of hash collision is very low.
     %% hash should be Fin n
     \item In my master thesis, each function of crypto was postulated.
-      However, it is better to put these functions as variables.
-      Therefore, the code can be more general for every crypto function that has these properties.
+      However, it is better to have these functions as variables.
+      Therefore, it enables the code to be more general for every crypto function that has these properties.
   \end{itemize}
 \end{frame}
 
@@ -362,10 +362,10 @@ module _ (cPostulates : CryptoPostulates) where
 \begin{frame}
   \frametitle{Ledger}
    \begin{itemize}[<+->]
-     \item Ledger is necessary to know how much currency each address has.
+     \item Ledger requires to know how much currency each address has.
      \item In this work, the ledger is a vector and each position corresponds to how much money each address has.
-     \item The total amount of the ledger is in the type. It is good to avoid bugs of money losing.
-     \item To do a transfer of money, I made a visualization of the ledger to see better the problem.
+     \item The total amount of the ledger is in the type. This is good to avoid bugs of money losing.
+     \item It is easier to understand a transfer of money using a visualization.
    \end{itemize}
 \end{frame}
 
@@ -490,15 +490,14 @@ transferFunds {totalAmount = totalAmount} {p} {q}
 \begin{frame}{Conclusions}
   \begin{itemize}[<+->]
     \item In this work, most of the specifications were placed on types.
-    \item In other works, the approach may be different.
-      That is, types have little information, and all proofs are done separately.
+    \item In other works, types may have little information, and all proofs should be done separately.
       For example, in the ledger, the sum of currency is in another field.
     \item This approach was not chosen as it is much simpler to understand the code when types are more expressive.
-      In addition, proving theorems is easier using this technic.
+      Moreover, proving theorems is easier using this technique.
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Good and more complex parts to add}
+\begin{frame}{Future Work}
   \begin{itemize}[<+->]
     \item Expand the formal model of the blockchain to include
       probability, game theory, and distributed systems properties.
@@ -515,6 +514,7 @@ transferFunds {totalAmount = totalAmount} {p} {q}
 \begin{frame}
   \vspace*{36 pt}
   \begin{center}
+  {\Huge Thank you for your attention!}
   {\Huge Questions?}
   \end{center}
 \end{frame}
