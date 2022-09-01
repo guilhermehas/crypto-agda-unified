@@ -98,6 +98,14 @@
     {\textquotedblleft\em}
     {\em\textquotedblright}
 
+\addtobeamertemplate{navigation symbols}{}{%
+    \usebeamerfont{footline}%
+    \usebeamercolor[fg]{footline}%
+    \hspace{1em}%
+    \insertframenumber/\inserttotalframenumber
+}
+
+
 % Information to be included on the title page:
 \title{Formalizing a cryptocurrency prototype \\
   using dependent types in Agda }
