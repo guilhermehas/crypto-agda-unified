@@ -158,6 +158,7 @@ open import Data.Product hiding (map)
 open import Function renaming (Injective to InjectiveSetoid)
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
+open import Relation.Nullary.Decidable
 open import Utils
 
 open ≡-Reasoning
@@ -235,7 +236,7 @@ hash : ⦃ Hashable A ⦄ → A → ℕ
 hash ⦃ hashA ⦄ = to hashA
 
 hashBoth : ⦃ Hashable A ⦄ → ⦃ Hashable B ⦄ → A → B → ℕ
-hashBoth ⦃ hashA ⦄ ⦃ hashB ⦄ a b = hash (hash a + hash b)
+hashBoth a b = hash (hash a + hash b)
 \end{code}
 
 
@@ -285,9 +286,12 @@ record WithCryptoPostulates (cryptoSets : CriptoSets)
   field
     priv→pub : PrivateKey → PublicKey
     Signed   : ⦃ Hashable MSG ⦄ → MSG
-                → PublicKey → Signature → Set
-    Signed?  : ∀ ⦃ _ : Hashable MSG ⦄ (msg : MSG) pk sig
-                → Dec $ Signed msg pk sig
+      → PublicKey → Signature → Set
+    sign : ⦃ Hashable MSG ⦄ → MSG → PrivateKey → Signature
+    signed? : ∀ ⦃ _ : Hashable MSG ⦄ (msg : MSG) pk sig
+      → Dec $ Signed msg pk sig
+    signedTrue : ∀ ⦃ _ : Hashable MSG ⦄ (msg : MSG) pk
+      → True (signed? msg (priv→pub pk) (sign msg pk))
 \end{code}
 \end{frame}
 
