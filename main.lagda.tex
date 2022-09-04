@@ -293,8 +293,8 @@ record WithCryptoPostulates (cryptoSets : CriptoSets)
     signedTrue : ∀ ⦃ _ : Hashable MSG ⦄ (msg : MSG) pk
       → True (signed? msg (priv→pub pk) (sign msg pk))
     signedFalse : ∀ ⦃ _ : Hashable MSG ⦄ (msg : MSG)
-      pk₁ pk₂ → pk₁ ≢ pk₂
-      → False (signed? msg (priv→pub pk₁) (sign msg pk₂))
+      pubK₁ privK₂ → pubK₁ ≢ priv→pub privK₂
+      → False (signed? msg pubK₁ (sign msg privK₂))
 \end{code}
 \end{frame}
 
