@@ -16,7 +16,7 @@
 \usepackage{babel}
 \usepackage{bookmark}
 
-\usepackage{graphicx}
+\usepackage{graphicx,caption}
 
 \usepackage[autostyle=true,french=guillemets,maxlevel=3]{csquotes}
 \RequirePackage{etex}
@@ -89,6 +89,13 @@
 \newunicodechar{∷}{\ensuremath{::}}
 
 \newcommand{\agda}[2]{\ExecuteMetaData[latex/#1.tex]{#2}}
+
+\newcommand{\source}[1]{\begin{textblock*}{4cm}(8.7cm,8.6cm)
+    \begin{beamercolorbox}[ht=0.5cm,right]{framesource}
+        \usebeamerfont{framesource}\usebeamercolor[fg]{framesource} Source: {#1}
+    \end{beamercolorbox}
+\end{textblock*}}
+
 
 \usetheme{Frankfurt}
 
@@ -170,6 +177,7 @@ open ≡-Reasoning
 \begin{frame}
   \frametitle{Bitcoin Account}
     \includegraphics[width=11cm, height=7cm]{privatekey}
+  \hspace*{15pt}\hbox{\scriptsize \thinspace{\tiny\itshape https://skyeymeister.weebly.com/bitcoin-public-key-to-private-key-generate.html}}
 \end{frame}
 
 \begin{frame}
@@ -292,9 +300,16 @@ record WithCryptoPostulates (cryptoSets : CriptoSets)
       → Dec $ Signed msg pk sig
     signedTrue : ∀ ⦃ _ : Hashable MSG ⦄ (msg : MSG) pk
       → True (signed? msg (priv→pub pk) (sign msg pk))
+\end{code}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Good postulates to have}
+\begin{code}
     signedFalse : ∀ ⦃ _ : Hashable MSG ⦄ (msg : MSG)
       pubK₁ privK₂ → pubK₁ ≢ priv→pub privK₂
       → False (signed? msg pubK₁ (sign msg privK₂))
+    InjectivePriv→Pub : Injective priv→pub
 \end{code}
 \end{frame}
 
