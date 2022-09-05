@@ -254,7 +254,7 @@ hashBoth a b = hash (hash a + hash b)
 \begin{frame}
   \frametitle{Crypto Constants}
 \begin{code}
-record CriptoSets : Set₁ where
+record CryptoSets : Set₁ where
   field
     PrivateKey         : Set
     PublicKey          : Set
@@ -288,9 +288,9 @@ record CriptoSets : Set₁ where
 \begin{frame}
   \frametitle{Postulates}
 \begin{code}
-record WithCryptoPostulates (cryptoSets : CriptoSets)
+record WithCryptoPostulates (cryptoSets : CryptoSets)
   : Set₁ where
-  open CriptoSets cryptoSets public
+  open CryptoSets cryptoSets public
   field
     priv→pub : PrivateKey → PublicKey
     Signed   : ⦃ Hashable MSG ⦄ → MSG
@@ -318,7 +318,7 @@ record WithCryptoPostulates (cryptoSets : CriptoSets)
 \begin{code}
 record CryptoPostulates : Set₁ where
   field
-    cryptoSets : CriptoSets
+    cryptoSets : CryptoSets
     cryptoAxioms : WithCryptoPostulates cryptoSets
   open WithCryptoPostulates cryptoAxioms public
 
@@ -441,7 +441,7 @@ record LedgerView (size : ℕ) (totalAmount : ℕ)
 \begin{frame}
   \frametitle{Ledger}
 \begin{code}
-record LederViewWithAmount (size : ℕ) (totalAmount : ℕ)
+record LedgerViewWithAmount (size : ℕ) (totalAmount : ℕ)
   (p q : Fin size) (p≢q : p ≢ q) (amount : ℕ) : Set where
 
   constructor ledgerViewAmount
@@ -480,7 +480,7 @@ makeLedgerWithAmount :
   (vP≡loopkup : lookup vecLedger p ≡ vP)
   (vQ≡loopkup : lookup vecLedger q ≡ vQ)
   {p≢q : p ≢ q}
-  → LederViewWithAmount size totalAmount p q p≢q amount
+  → LedgerViewWithAmount size totalAmount p q p≢q amount
 makeLedgerWithAmount vecLedger _ _ sum≡totalAmount vP-amount+amount≡vP vP≡loopkup vQ≡loopkup =
   ledgerViewAmount (ledgerViewC (ledgerC vecLedger sum≡totalAmount) _ _ vP≡loopkup vQ≡loopkup)
   _ vP-amount+amount≡vP
@@ -498,9 +498,9 @@ pattern ledgerCons vecLedger sum≡totalAmount vP vQ vP≡loopkup
   \frametitle{Ledger}
 \begin{code}
 transferFunds :
-    LederViewWithAmount size totalAmount p q
+    LedgerViewWithAmount size totalAmount p q
       p≢q amount
-  → LederViewWithAmount size totalAmount q p
+  → LedgerViewWithAmount size totalAmount q p
       (sym≢ p≢q) amount
 transferFunds {totalAmount = totalAmount} {p} {q}
   {p≢q} {amount}
@@ -601,15 +601,15 @@ transferFunds {totalAmount = totalAmount} {p} {q}
 LedgerWithAmount : (p : Fin size) (amount : ℕ) (ledger : Ledger size totalAmount) → Set
 LedgerWithAmount p amount (ledgerC vecLedger _) = amount ℕ.≤ lookup vecLedger p
 
-LedgerViewWithAmount : (amount : ℕ) (ledger : LedgerView size totalAmount p q p≢q) → Set
-LedgerViewWithAmount {p = p} amount (ledgerViewC ledger _ _ _ _) = LedgerWithAmount p amount ledger
+LedgerViewWithAmount' : (amount : ℕ) (ledger : LedgerView size totalAmount p q p≢q) → Set
+LedgerViewWithAmount' {p = p} amount (ledgerViewC ledger _ _ _ _) = LedgerWithAmount p amount ledger
 
 ledger→ledgerView : (p q : Fin size) (p≢q : p ≢ q) (ledger : Ledger size totalAmount)
   → LedgerView size totalAmount p q p≢q
 ledger→ledgerView p q p≢q ledger = ledgerViewC ledger _ _ refl refl
 
 ledgerView→ledgerViewAmount : (amount : ℕ) (ledger : LedgerView size totalAmount p q p≢q)
-  (withAmount : LedgerViewWithAmount amount ledger) → LederViewWithAmount size totalAmount p q p≢q amount
+  (withAmount : LedgerViewWithAmount' amount ledger) → LedgerViewWithAmount size totalAmount p q p≢q amount
 ledgerView→ledgerViewAmount amount ledgerView@(ledgerViewC
   (ledgerC vecLedger sum≡totalAmount)
   vP vQ vP≡loopkup vQ≡loopkup) amount≤lookupP  =
