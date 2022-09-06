@@ -361,7 +361,7 @@ module _ (cPostulates : CryptoPostulates) where
     field
       publicKeyInput : PublicKey
       addressOutput  : Address
-      amount         : ℕ
+      amount         : Amount
 
     addressInput = address publicKeyInput
 
@@ -405,16 +405,17 @@ private variable
   size amount totalAmount n : ℕ
   p q : Fin n
   p≢q : p ≢ q
+Amount = ℕ
 \end{code}
 }
 
 \begin{frame}
   \frametitle{Ledger}
 \begin{code}
-record Ledger (size : ℕ) (totalAmount : ℕ) : Set where
+record Ledger (size : ℕ) (totalAmount : Amount) : Set where
   constructor ledgerC
   field
-    vecLedger       : Vec ℕ size
+    vecLedger       : Vec Amount size
     sum≡totalAmount : sum vecLedger ≡ totalAmount
 \end{code}
 \end{frame}
@@ -422,7 +423,7 @@ record Ledger (size : ℕ) (totalAmount : ℕ) : Set where
 \begin{frame}
   \frametitle{Ledger}
 \begin{code}
-record LedgerView (size : ℕ) (totalAmount : ℕ)
+record LedgerView (size : ℕ) (totalAmount : Amount)
   (p q : Fin size) (p≢q : p ≢ q) : Set where
   constructor ledgerViewC
   field
@@ -441,8 +442,8 @@ record LedgerView (size : ℕ) (totalAmount : ℕ)
 \begin{frame}
   \frametitle{Ledger}
 \begin{code}
-record LedgerViewWithAmount (size : ℕ) (totalAmount : ℕ)
-  (p q : Fin size) (p≢q : p ≢ q) (amount : ℕ) : Set where
+record LedgerViewWithAmount (size : ℕ) (totalAmount : Amount)
+  (p q : Fin size) (p≢q : p ≢ q) (amount : Amount) : Set where
 
   constructor ledgerViewAmount
   field
