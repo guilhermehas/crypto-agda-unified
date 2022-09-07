@@ -319,8 +319,8 @@ record WithCryptoPostulates (cryptoSets : CryptoSets)
 record CryptoPostulates : Set₁ where
   field
     cryptoSets : CryptoSets
-    cryptoAxioms : WithCryptoPostulates cryptoSets
-  open WithCryptoPostulates cryptoAxioms public
+    cryptoPostulates : WithCryptoPostulates cryptoSets
+  open WithCryptoPostulates cryptoPostulates public
 
 \end{code}
 \end{frame}
@@ -394,7 +394,7 @@ module _ (cPostulates : CryptoPostulates) where
    \begin{itemize}[<+->]
      \item Ledger requires to know how much currency each address has.
      \item In this work, the ledger is a vector and each position corresponds to how much money each address has.
-     \item The total amount of the ledger is in the type. This is good to avoid some bugs of losing money.
+     \item The total amount of the ledger is in the type. This is good to avoid some bugs that cause losses of money.
      \item It is easier to understand a transfer of money using a visualization.
    \end{itemize}
 \end{frame}
