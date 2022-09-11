@@ -260,6 +260,8 @@ record CryptoSets : Set₁ where
     PublicKey          : Set
     hashablePublicKey  : Hashable PublicKey
     Signature          : Set
+    Signed             : ⦃ Hashable MSG ⦄
+      → MSG → PublicKey → Signature → Set
 
   instance
     _ = hashablePublicKey
@@ -293,8 +295,6 @@ record WithCryptoPostulates (cryptoSets : CryptoSets)
   open CryptoSets cryptoSets public
   field
     priv→pub : PrivateKey → PublicKey
-    Signed   : ⦃ Hashable MSG ⦄ → MSG
-      → PublicKey → Signature → Set
     sign : ⦃ Hashable MSG ⦄ → MSG → PrivateKey → Signature
     signed? : ∀ ⦃ _ : Hashable MSG ⦄ (msg : MSG) pk sig
       → Dec $ Signed msg pk sig
