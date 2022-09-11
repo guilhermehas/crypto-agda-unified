@@ -431,8 +431,8 @@ record LedgerView (size : ℕ) (totalAmount : Amount)
   open Ledger ledger
 
   field
-    vP : ℕ
-    vQ : ℕ
+    vP : Amount
+    vQ : Amount
 
     vP≡loopkup : lookup vecLedger p ≡ vP
     vQ≡loopkup : lookup vecLedger q ≡ vQ
@@ -453,7 +453,7 @@ record LedgerViewWithAmount (size : ℕ) (totalAmount : Amount)
   open Ledger ledger
 
   field
-    vP-amount           : ℕ
+    vP-amount           : Amount
     vP-amount+amount≡vP : vP-amount + amount ≡ vP
 \end{code}
 \end{frame}
