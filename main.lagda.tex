@@ -188,7 +188,7 @@ open ≡-Reasoning
    since the probability of two different files having the same hash is negligible.
     \item By the pigeonhole principle, the injectivity of the hash is impossible.
       However, two files that have the same hash were never found in SHA-256.
-    \item It is also not possible to compute the inverse of the hash function.
+    \item It is also very hard to compute the inverse of the hash function.
   \end{itemize}
 \end{frame}
 
@@ -280,7 +280,6 @@ record CryptoSets : Set₁ where
   \begin{itemize}[<+->]
     \item Hash injective is impossible to prove.
       But we postulate it as the probability of hash collision is very low.
-    %% hash should be Fin n
     \item In my master thesis, each function of crypto was postulated.
       However, it is better to have these functions as variables.
       Therefore, it enables the code to be more general for every crypto function that has these properties.
@@ -329,13 +328,17 @@ record CryptoPostulates : Set₁ where
 
 \begin{frame}
   \frametitle{Message Signed}
+\AgdaHide{
 \begin{code}
 module _ (cPostulates : CryptoPostulates) where
 
   open CryptoPostulates cPostulates
 
   module _ ⦃ _ : Hashable MSG ⦄ where
+\end{code}
+}
 
+\begin{code}
     record SignedWithSigPbk  (msg : MSG)
       (publicKey : PublicKey) : Set where
       field
@@ -366,7 +369,7 @@ module _ (cPostulates : CryptoPostulates) where
     addressInput = address publicKeyInput
 
     field
-      addressInput≢Output : addressInput ≢ addressOutput
+      addressInputDifOutput : addressInput ≢ addressOutput
 
 \end{code}
 \end{frame}
@@ -380,9 +383,15 @@ module _ (cPostulates : CryptoPostulates) where
     record SignedTransaction  : Set where
       field
         transaction : Transaction
+\end{code}
+\AgdaHide{
+\begin{code}
       open Transaction transaction public
 
       field
+\end{code}
+}
+\begin{code}
         signed : SignedWithSigPbk transaction publicKeyInput
 \end{code}
 \end{frame}
@@ -444,15 +453,24 @@ record LedgerView (size : ℕ) (totalAmount : Amount)
 \begin{code}
 record LedgerViewWithAmount (size : ℕ) (totalAmount : Amount)
   (p q : Fin size) (p≢q : p ≢ q) (amount : Amount) : Set where
-
+\end{code}
+\AgdaHide{
+\begin{code}
   constructor ledgerViewAmount
+\end{code}
+}
+\begin{code}
   field
     ledgerView : LedgerView size totalAmount p q p≢q
-
+\end{code}
+\AgdaHide{
+\begin{code}
   open LedgerView ledgerView
-  open Ledger ledger
-
   field
+\end{code}
+}
+
+\begin{code}
     vP-amount           : Amount
     vP-amount+amount≡vP : vP-amount + amount ≡ vP
 \end{code}
@@ -476,20 +494,20 @@ sum≔≡ (x ∷ xs) (suc p) y = begin
 
 makeLedgerWithAmount :
   (vecLedger : Vec ℕ size) (vP : ℕ) (vQ : ℕ) {vP-amount : ℕ}
-  (sum≡totalAmount : sum vecLedger ≡ totalAmount)
+  (sumEqtotalAmount : sum vecLedger ≡ totalAmount)
   (vP-amount+amount≡vP : vP-amount + amount ≡ vP)
   (vP≡loopkup : lookup vecLedger p ≡ vP)
   (vQ≡loopkup : lookup vecLedger q ≡ vQ)
   {p≢q : p ≢ q}
   → LedgerViewWithAmount size totalAmount p q p≢q amount
-makeLedgerWithAmount vecLedger _ _ sum≡totalAmount vP-amount+amount≡vP vP≡loopkup vQ≡loopkup =
-  ledgerViewAmount (ledgerViewC (ledgerC vecLedger sum≡totalAmount) _ _ vP≡loopkup vQ≡loopkup)
+makeLedgerWithAmount vecLedger _ _ sumEqtotalAmount vP-amount+amount≡vP vP≡loopkup vQ≡loopkup =
+  ledgerViewAmount (ledgerViewC (ledgerC vecLedger sumEqtotalAmount) _ _ vP≡loopkup vQ≡loopkup)
   _ vP-amount+amount≡vP
 
-pattern ledgerCons vecLedger sum≡totalAmount vP vQ vP≡loopkup
+pattern ledgerCons vecLedger sumEqtotalAmount vP vQ vP≡loopkup
   vQ≡loopkup vP-amount vP-amount+amount≡vP
   = (ledgerViewAmount (ledgerViewC
-    (ledgerC vecLedger sum≡totalAmount)
+    (ledgerC vecLedger sumEqtotalAmount)
     vP vQ vP≡loopkup vQ≡loopkup) vP-amount vP-amount+amount≡vP)
 \end{code}
 }
@@ -505,14 +523,14 @@ transferFunds :
       (sym≢ p≢q) amount
 transferFunds {totalAmount = totalAmount} {p} {q}
   {p≢q} {amount}
-  (ledgerCons vecLedger sum≡totalAmount vP vQ vP≡loopkup
+  (ledgerCons vecLedger sumEqtotalAmount vP vQ vP≡loopkup
     vQ≡loopkup vP-amount vP-amount+amount≡vP) =
 
     makeLedgerWithAmount
       (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount)
       vQ+amount vP-amount
 
-      sum≡ refl lookupQ≡ lookupP≡
+      sumEq refl lookupQEq lookupP≡
 \end{code}
 \end{frame}
 
@@ -581,11 +599,11 @@ transferFunds {totalAmount = totalAmount} {p} {q}
   lookupP≡ : lookup (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) p ≡ vP-amount
   lookupP≡ = trans (lookup∘update′ p≢q _ _) (lookup∘update p _ _)
 
-  lookupQ≡ : lookup (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) q ≡ vQ+amount
-  lookupQ≡ = lookup∘update q _ _
+  lookupQEq : lookup (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) q ≡ vQ+amount
+  lookupQEq = lookup∘update q _ _
 
-  sum≡' : sum (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) + vQ + vP ≡ totalAmount + vQ + vP
-  sum≡' = begin
+  sumEq' : sum (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) + vQ + vP ≡ totalAmount + vQ + vP
+  sumEq' = begin
     sum ((vecLedger [ p ]≔ vP-amount) [ q ]≔ vQ+amount) + vQ + vP ≡⟨ cong (λ H → sum ((vecLedger [ p ]≔ vP-amount) [ q ]≔ vQ+amount) + H + vP) vQSame ⟩
     sum ((vecLedger [ p ]≔ vP-amount) [ q ]≔ vQ+amount) + lookup (vecLedger [ p ]≔ vP-amount) q + vP  ≡⟨ cong (_+ vP) (sum≔≡ _ q _) ⟩
     sum (vecLedger [ p ]≔ vP-amount) + vQ+amount + vP  ≡⟨ helper (sum (vecLedger [ p ]≔ vP-amount)) vQ+amount vP ⟩
@@ -593,11 +611,11 @@ transferFunds {totalAmount = totalAmount} {p} {q}
     sum (vecLedger [ p ]≔ vP-amount) + lookup vecLedger p + vQ+amount ≡⟨ cong (_+ vQ+amount) (sum≔≡ _ p _) ⟩
     sum vecLedger + vP-amount + (vQ + amount) ≡⟨ helper₂ (sum vecLedger) vP-amount vQ amount ⟩
     sum vecLedger + vQ + (vP-amount + amount) ≡⟨ cong (sum vecLedger + vQ +_) vP-amount+amount≡vP ⟩
-    sum vecLedger + vQ + vP ≡⟨ cong (λ H → H + vQ + vP) sum≡totalAmount ⟩
+    sum vecLedger + vQ + vP ≡⟨ cong (λ H → H + vQ + vP) sumEqtotalAmount ⟩
     totalAmount + vQ + vP ∎
 
-  sum≡ : sum (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) ≡ totalAmount
-  sum≡ = +-cancelʳ-≡ _ _ (+-cancelʳ-≡ _ _ sum≡')
+  sumEq : sum (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) ≡ totalAmount
+  sumEq = +-cancelʳ-≡ _ _ (+-cancelʳ-≡ _ _ sumEq')
 
 LedgerWithAmount : (p : Fin size) (amount : ℕ) (ledger : Ledger size totalAmount) → Set
 LedgerWithAmount p amount (ledgerC vecLedger _) = amount ℕ.≤ lookup vecLedger p
@@ -612,7 +630,7 @@ ledger→ledgerView p q p≢q ledger = ledgerViewC ledger _ _ refl refl
 ledgerView→ledgerViewAmount : (amount : ℕ) (ledger : LedgerView size totalAmount p q p≢q)
   (withAmount : LedgerViewWithAmount' amount ledger) → LedgerViewWithAmount size totalAmount p q p≢q amount
 ledgerView→ledgerViewAmount amount ledgerView@(ledgerViewC
-  (ledgerC vecLedger sum≡totalAmount)
+  (ledgerC vecLedger sumEqtotalAmount)
   vP vQ vP≡loopkup vQ≡loopkup) amount≤lookupP  =
   ledgerViewAmount ledgerView (vP ∸ amount) (m∸n+n≡m {n = amount}
   (subst (amount ℕ.≤_) vP≡loopkup amount≤lookupP))
