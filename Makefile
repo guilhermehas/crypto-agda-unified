@@ -17,6 +17,7 @@ pdf: ${PDF}
 ${PDF}: ${LAGDA}
 	${AGDA}   ${LAGDA}
 	${LATEX}  ${DOCTEX}
+	${LATEX}  ${DOCTEX}
 
 install: pdf
 	mkdir -p $(out)
