@@ -206,10 +206,11 @@ open ≡-Reasoning
 
 \AgdaHide{
 \begin{code}
+Type = Set
+Type₁ = Set₁
 private variable
   ℓ : Level
-  A B : Set ℓ
-  MSG : Set
+  A B MSG : Type
 
 Injective : (A → B) → Set _
 Injective = InjectiveSetoid _≡_ _≡_
@@ -223,7 +224,7 @@ m - .zero [ z≤n ] = m
 \begin{frame}
   \frametitle{Hashable}
 \begin{code}
-Hashable : Set ℓ → Set ℓ
+Hashable : Type → Type
 Hashable A = A ↣ ℕ
 \end{code}
 
@@ -254,18 +255,24 @@ hashBoth a b = hash (hash a + hash b)
 \begin{frame}
   \frametitle{Crypto Constants}
 \begin{code}
-record CryptoSets : Set₁ where
+record CryptoTypes : Type₁ where
   field
-    PrivateKey         : Set
-    PublicKey          : Set
+    PrivateKey         : Type
+    PublicKey          : Type
     hashablePublicKey  : Hashable PublicKey
-    Signature          : Set
+    Signature          : Type
     Signed             : ⦃ Hashable MSG ⦄
-      → MSG → PublicKey → Signature → Set
+      → MSG → PublicKey → Signature → Type
+\end{code}
 
+\AgdaHide{
+\begin{code}
   instance
     _ = hashablePublicKey
+\end{code}
+}
 
+\begin{code}
   Address = ℕ
   Amount  = ℕ
 
@@ -289,9 +296,9 @@ record CryptoSets : Set₁ where
 \begin{frame}
   \frametitle{Postulates}
 \begin{code}
-record WithCryptoPostulates (cryptoSets : CryptoSets)
-  : Set₁ where
-  open CryptoSets cryptoSets public
+record WithCryptoPostulates (cryptoTypes : CryptoTypes)
+  : Type₁ where
+  open CryptoTypes cryptoTypes public
   field
     priv→pub : PrivateKey → PublicKey
     sign : ⦃ Hashable MSG ⦄ → MSG → PrivateKey → Signature
@@ -315,38 +322,15 @@ record WithCryptoPostulates (cryptoSets : CryptoSets)
 \begin{frame}
   \frametitle{Postulates}
 \begin{code}
-record CryptoPostulates : Set₁ where
+record CryptoPostulates : Type₁ where
   field
-    cryptoSets : CryptoSets
-    cryptoPostulates : WithCryptoPostulates cryptoSets
-  open WithCryptoPostulates cryptoPostulates public
+    cryptoTypes : CryptoTypes
+    cryptoPostulates : WithCryptoPostulates cryptoTypes
 
 \end{code}
 \end{frame}
 
 \section{Transactions}
-
-\begin{frame}
-  \frametitle{Message Signed}
-\AgdaHide{
-\begin{code}
-module _ (cPostulates : CryptoPostulates) where
-
-  open CryptoPostulates cPostulates
-
-  module _ ⦃ _ : Hashable MSG ⦄ where
-\end{code}
-}
-
-\begin{code}
-    record SignedWithSigPbk  (msg : MSG)
-      (publicKey : PublicKey) : Set where
-      field
-        signature : Signature
-        signed    : Signed msg publicKey signature
-
-\end{code}
-\end{frame}
 
 \begin{frame}
    \frametitle{Transactions}
@@ -358,9 +342,33 @@ module _ (cPostulates : CryptoPostulates) where
 \end{frame}
 
 \begin{frame}
+  \frametitle{Message Signed}
+\AgdaHide{
+\begin{code}
+  open WithCryptoPostulates cryptoPostulates public
+
+module _ (cPostulates : CryptoPostulates) where
+
+  open CryptoPostulates cPostulates
+
+  module _ ⦃ _ : Hashable MSG ⦄ where
+\end{code}
+}
+
+\begin{code}
+    record SignedWithSigPbk  (msg : MSG)
+      (publicKey : PublicKey) : Type where
+      field
+        signature : Signature
+        signed    : Signed msg publicKey signature
+
+\end{code}
+\end{frame}
+
+\begin{frame}
   \frametitle{Transactions}
 \begin{code}
-  record Transaction : Set where
+  record Transaction : Type where
     field
       publicKeyInput : PublicKey
       addressOutput  : Address
@@ -380,7 +388,7 @@ module _ (cPostulates : CryptoPostulates) where
 
   module _ ⦃ _ : Hashable Transaction ⦄ where
 
-    record SignedTransaction  : Set where
+    record SignedTransaction  : Type where
       field
         transaction : Transaction
 \end{code}
@@ -401,8 +409,8 @@ module _ (cPostulates : CryptoPostulates) where
 \begin{frame}
   \frametitle{Ledger}
    \begin{itemize}[<+->]
-     \item Ledger requires to know how much currency each address has.
      \item In this work, the ledger is a vector and each position corresponds to how much money each address has.
+     \item Ledger requires to know how much currency each address has.
      \item The total amount of the ledger is in the type. This is good to avoid some bugs that cause losses of money.
      \item It is easier to understand a transfer of money using a visualization.
    \end{itemize}
@@ -421,7 +429,7 @@ Amount = ℕ
 \begin{frame}
   \frametitle{Ledger}
 \begin{code}
-record Ledger (size : ℕ) (totalAmount : Amount) : Set where
+record Ledger (size : ℕ) (totalAmount : Amount) : Type where
   constructor ledgerC
   field
     vecLedger       : Vec Amount size
@@ -433,10 +441,11 @@ record Ledger (size : ℕ) (totalAmount : Amount) : Set where
   \frametitle{Ledger}
 \begin{code}
 record LedgerView (size : ℕ) (totalAmount : Amount)
-  (p q : Fin size) (p≢q : p ≢ q) : Set where
+  (p q : Fin size) (p≢q : p ≢ q) : Type where
   constructor ledgerViewC
   field
     ledger : Ledger size totalAmount
+
   open Ledger ledger
 
   field
@@ -452,7 +461,7 @@ record LedgerView (size : ℕ) (totalAmount : Amount)
   \frametitle{Ledger}
 \begin{code}
 record LedgerViewWithAmount (size : ℕ) (totalAmount : Amount)
-  (p q : Fin size) (p≢q : p ≢ q) (amount : Amount) : Set where
+  (p q : Fin size) (p≢q : p ≢ q) (amount : Amount) : Type where
 \end{code}
 \AgdaHide{
 \begin{code}
@@ -509,6 +518,8 @@ pattern ledgerCons vecLedger sumEqtotalAmount vP vQ vP≡loopkup
   = (ledgerViewAmount (ledgerViewC
     (ledgerC vecLedger sumEqtotalAmount)
     vP vQ vP≡loopkup vQ≡loopkup) vP-amount vP-amount+amount≡vP)
+
+update = _[_]≔_
 \end{code}
 }
 
@@ -527,10 +538,10 @@ transferFunds {totalAmount = totalAmount} {p} {q}
     vQ≡loopkup vP-amount vP-amount+amount≡vP) =
 
     makeLedgerWithAmount
-      (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount)
+      (update (update vecLedger p vP-amount) q vQ+amount)
       vQ+amount vP-amount
 
-      sumEq refl lookupQEq lookupP≡
+      sumEq refl lookupQEq lookupPEq
 \end{code}
 \end{frame}
 
@@ -596,8 +607,8 @@ transferFunds {totalAmount = totalAmount} {p} {q}
     lookup vecLedger q ≡˘⟨ lookup∘update′ (sym≢ p≢q) _ _ ⟩
     lookup (vecLedger [ p ]≔ vP-amount) q ∎
 
-  lookupP≡ : lookup (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) p ≡ vP-amount
-  lookupP≡ = trans (lookup∘update′ p≢q _ _) (lookup∘update p _ _)
+  lookupPEq : lookup (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) p ≡ vP-amount
+  lookupPEq = trans (lookup∘update′ p≢q _ _) (lookup∘update p _ _)
 
   lookupQEq : lookup (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) q ≡ vQ+amount
   lookupQEq = lookup∘update q _ _
@@ -617,10 +628,10 @@ transferFunds {totalAmount = totalAmount} {p} {q}
   sumEq : sum (vecLedger [ p ]≔ vP-amount [ q ]≔ vQ+amount) ≡ totalAmount
   sumEq = +-cancelʳ-≡ _ _ (+-cancelʳ-≡ _ _ sumEq')
 
-LedgerWithAmount : (p : Fin size) (amount : ℕ) (ledger : Ledger size totalAmount) → Set
+LedgerWithAmount : (p : Fin size) (amount : ℕ) (ledger : Ledger size totalAmount) → Type
 LedgerWithAmount p amount (ledgerC vecLedger _) = amount ℕ.≤ lookup vecLedger p
 
-LedgerViewWithAmount' : (amount : ℕ) (ledger : LedgerView size totalAmount p q p≢q) → Set
+LedgerViewWithAmount' : (amount : ℕ) (ledger : LedgerView size totalAmount p q p≢q) → Type
 LedgerViewWithAmount' {p = p} amount (ledgerViewC ledger _ _ _ _) = LedgerWithAmount p amount ledger
 
 ledger→ledgerView : (p q : Fin size) (p≢q : p ≢ q) (ledger : Ledger size totalAmount)
